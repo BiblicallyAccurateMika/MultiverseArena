@@ -21,4 +21,8 @@
         <Using Include="NUnit.Framework"/>
     </ItemGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\MA_Core\MA_Core.csproj" />
+    </ItemGroup>
+
 </Project>

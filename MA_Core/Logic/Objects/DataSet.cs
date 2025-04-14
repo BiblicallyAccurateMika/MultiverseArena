@@ -1,6 +1,9 @@
 ﻿using System.IO.Compression;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using MA_Core.Data;
+
+[assembly: InternalsVisibleTo("MA_Test")]
 
 namespace MA_Core.Logic.Objects;
 
@@ -67,8 +70,19 @@ public class DataSet
             throw new JsonException("File does not contain dataset data");
         }
         
-        Console.WriteLine($"Actions: {datasetData.Actions.Length}");
-        Console.WriteLine($"Units: {datasetData.Units.Length}");
+        applyJsonConfig(datasetData);
+    }
+    
+    internal static DataSet Test_Factory(DataSetJson datasetData)
+    {
+        var dataSet = new DataSet();
+        dataSet.applyJsonConfig(datasetData);
+        return dataSet;
+    }
+    private void applyJsonConfig(DataSetJson datasetData)
+    {
+        Actions = datasetData.Actions.Select(x => x.AsAction()).ToList();
+        Units = datasetData.Units.Select(x => x.AsUnit(Actions)).ToList();
     }
 
     #endregion

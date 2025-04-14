@@ -1,48 +1,48 @@
 ﻿namespace MA_Core.Data;
 
-public abstract class ActionStep
+public abstract record ActionStep
 {
     public abstract string Description { get; }
 
-    public class SwapPosition : ActionStep
+    public record SwapPosition : ActionStep
     {
         public override string Description => "Move";
     }
     
-    public class PhysicalAttack : ActionStep
+    public record PhysicalAttack : ActionStep
     {
         public override string Description => "Does a physical attack";
         
-        public int Accuracy { get; set; }
-        public int Power { get; set; }
+        public int Accuracy { get; init; }
+        public int Power { get; init; }
     }
 
-    public abstract class Select : ActionStep
+    public abstract record Select : ActionStep
     {
-        public class Self : Select
+        public record Self : Select
         {
             public override string Description => "Selects the acting unit";
         }
         
-        public abstract class Arbitrary : Select
+        public abstract record Arbitrary : Select
         {
-            public bool AllowSelf { get; set; }
+            public bool AllowSelf { get; init; }
 
-            public Enums.Faction Faction { get; set; }
-            public Enums.Range Range { get; set; }
+            public Enums.Faction Faction { get; init; }
+            public Enums.Range Range { get; init; }
 
-            public class Automatic : Arbitrary
+            public record Automatic : Arbitrary
             {
                 public override string Description => "Automatically selects all eligible units";
             }
 
-            public class Manual : Arbitrary
+            public record Manual : Arbitrary
             {
                 public override string Description => "Select units manually";
                 
-                public int SelectionCount { get; set; }
-                public bool UpToSelectionCount { get; set; }
-                public bool EmptyFieldAllowed { get; set; }
+                public int SelectionCount { get; init; }
+                public bool UpToSelectionCount { get; init; }
+                public bool EmptyFieldAllowed { get; init; }
             }
         }
     }
