@@ -1,10 +1,10 @@
 ﻿namespace MA_Core.Data;
 
-public class Action
+public record Action
 {
-    public string ID { get; set; }
-    public string Name { get; set; }
-    public string Description { get; set; }
+    public required string ID { get; init; }
+    public required string Name { get; init; }
+    public required string Description { get; init; }
     
-    public ActionStep[] Steps { get; set; }
+    public ActionStep[]? Steps { get; init; }
 }

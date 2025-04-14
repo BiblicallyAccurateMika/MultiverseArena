@@ -3,7 +3,6 @@
 public class Unit
 {
     public string Codename { get; set; }
-    public string Name { get; set; }
     public string IconPath { get; set; }
 
     public Level Level1 { get; set; }
