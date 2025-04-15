@@ -12,7 +12,6 @@ public class Unit
     
     public class Level
     {
-        public int Rank { get; set; }
         public string Name { get; set; }
         public string SpritePath { get; set; }
         

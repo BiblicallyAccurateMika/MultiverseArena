@@ -160,6 +160,7 @@ public class DataSetTests
             Assert.That(dataset.Units[0].Level1.SpritePath, Is.EqualTo("TestSprite1"));
             Assert.That(dataset.Units[0].Level1.Actions, Has.Length.EqualTo(1));
             Assert.That(dataset.Units[0].Level1.Actions[0].ID, Is.EqualTo("000"));
+            Assert.That(ReferenceEquals(dataset.Units[0].Level1.Actions[0], dataset.Actions[0]), Is.True);
             Assert.That(dataset.Units[0].Level1.HP, Is.EqualTo(100));
             Assert.That(dataset.Units[0].Level1.Strength, Is.EqualTo(10));
             Assert.That(dataset.Units[0].Level1.Toughness, Is.EqualTo(10));
@@ -174,6 +175,7 @@ public class DataSetTests
             Assert.That(dataset.Units[0].Level2.SpritePath, Is.EqualTo("TestSprite2"));
             Assert.That(dataset.Units[0].Level2.Actions, Has.Length.EqualTo(1));
             Assert.That(dataset.Units[0].Level2.Actions[0].ID, Is.EqualTo("000"));
+            Assert.That(ReferenceEquals(dataset.Units[0].Level2.Actions[0], dataset.Actions[0]), Is.True);
             Assert.That(dataset.Units[0].Level2.HP, Is.EqualTo(200));
             Assert.That(dataset.Units[0].Level2.Strength, Is.EqualTo(20));
             Assert.That(dataset.Units[0].Level2.Toughness, Is.EqualTo(20));
@@ -189,6 +191,8 @@ public class DataSetTests
             Assert.That(dataset.Units[0].Level3.Actions, Has.Length.EqualTo(2));
             Assert.That(dataset.Units[0].Level3.Actions[0].ID, Is.EqualTo("000"));
             Assert.That(dataset.Units[0].Level3.Actions[1].ID, Is.EqualTo("001"));
+            Assert.That(ReferenceEquals(dataset.Units[0].Level3.Actions[0], dataset.Actions[0]), Is.True);
+            Assert.That(ReferenceEquals(dataset.Units[0].Level3.Actions[1], dataset.Actions[1]), Is.True);
             Assert.That(dataset.Units[0].Level3.HP, Is.EqualTo(300));
             Assert.That(dataset.Units[0].Level3.Strength, Is.EqualTo(30));
             Assert.That(dataset.Units[0].Level3.Toughness, Is.EqualTo(30));
@@ -204,6 +208,8 @@ public class DataSetTests
             Assert.That(dataset.Units[0].Level4.Actions, Has.Length.EqualTo(2));
             Assert.That(dataset.Units[0].Level4.Actions[0].ID, Is.EqualTo("000"));
             Assert.That(dataset.Units[0].Level4.Actions[1].ID, Is.EqualTo("001"));
+            Assert.That(ReferenceEquals(dataset.Units[0].Level4.Actions[0], dataset.Actions[0]), Is.True);
+            Assert.That(ReferenceEquals(dataset.Units[0].Level4.Actions[1], dataset.Actions[1]), Is.True);
             Assert.That(dataset.Units[0].Level4.HP, Is.EqualTo(400));
             Assert.That(dataset.Units[0].Level4.Strength, Is.EqualTo(40));
             Assert.That(dataset.Units[0].Level4.Toughness, Is.EqualTo(40));
