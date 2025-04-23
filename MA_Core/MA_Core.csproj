@@ -8,8 +8,6 @@
 
     <ItemGroup>
       <Folder Include="Logic\Managers\" />
-      <Folder Include="Logic\Processes\" />
-      <Folder Include="Logic\ProcessManagers\" />
     </ItemGroup>
 
 </Project>

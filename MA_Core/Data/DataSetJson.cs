@@ -77,9 +77,21 @@ public class DataSetJson
                                 AllowSelf = AllowSelf
                             };
                         }
-                        break;
-                    case StepTypeEnum.SwapPosition: return new ActionStep.SwapPosition(); break;
-                    default: throw new NotImplementedException(); break;
+                    case StepTypeEnum.SwapPosition: return new ActionStep.SwapPosition();
+                    case StepTypeEnum.Attack:
+                        if (AttackType == AttackTypeEnum.Physical)
+                        {
+                            return new ActionStep.PhysicalAttack
+                            {
+                                Accuracy = AttackAccuracy,
+                                Power = AttackPower
+                            };
+                        }
+                        else
+                        {
+                            throw new NotImplementedException();
+                        }
+                    default: throw new NotImplementedException();
                 }
             }
         }

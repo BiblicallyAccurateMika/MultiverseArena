@@ -7,13 +7,13 @@ using System.Text.Json;
 namespace MA_Core.Data;
 
 /// <summary>
-/// Stellt ein Dataset mit Einheiten und alle möglichen Aktionen dar
+/// A DataSet holds some <see cref="Action"/> and <see cref="Unit"/> data that can be edited and used for a battle
 /// </summary>
 public class DataSet
 {
-    #region Eigenschaften
+    #region Properties
 
-    #region Constants
+    #region constants
 
     private const string DatasetFileName = "DataSet.json";
 
@@ -31,7 +31,7 @@ public class DataSet
 
     #endregion
 
-    #region Initialisierung
+    #region Init
 
     /// <summary>
     /// Creates a empty Dataset
@@ -47,21 +47,13 @@ public class DataSet
     /// <param name="path">Path to the dataset file</param>
     internal DataSet(string path)
     {
-        if (String.IsNullOrEmpty(path))
-        {
-            throw new ArgumentNullException(nameof(path));
-        }
-        if (!File.Exists(path))
-        {
-            throw new FileNotFoundException("File not found", path);
-        }
+        if (String.IsNullOrEmpty(path)) throw new ArgumentNullException(nameof(path));
+        if (path.StartsWith('"') && path.EndsWith('"')) path = path[1..^1]; // Removes quotation marks
+        if (!File.Exists(path)) throw new FileNotFoundException("File not found", path);
         
         var zip = ZipFile.OpenRead(path);
-
         if (!zip.Entries.Any(x => x.Name.Equals(DatasetFileName)))
-        {
             throw new FileNotFoundException($"Dataset does not contain '{DatasetFileName}'", path);
-        }
         
         Path = path;
         
@@ -70,10 +62,7 @@ public class DataSet
         var json = JsonDocument.Parse(file.Open());
         var datasetData = json.Deserialize<DataSetJson>();
 
-        if (datasetData == null)
-        {
-            throw new JsonException("File does not contain dataset data");
-        }
+        if (datasetData == null) throw new JsonException("File does not contain dataset data");
         
         applyJsonConfig(datasetData);
     }
@@ -92,7 +81,7 @@ public class DataSet
 
     #endregion
 
-    #region Methoden
+    #region Methods
 
     #endregion
 }
