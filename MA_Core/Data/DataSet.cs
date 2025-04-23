@@ -1,11 +1,10 @@
 ﻿using System.IO.Compression;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
-using MA_Core.Data;
 
 [assembly: InternalsVisibleTo("MA_Test")]
 
-namespace MA_Core.Logic.Objects;
+namespace MA_Core.Data;
 
 /// <summary>
 /// Stellt ein Dataset mit Einheiten und alle möglichen Aktionen dar
@@ -13,16 +12,22 @@ namespace MA_Core.Logic.Objects;
 public class DataSet
 {
     #region Eigenschaften
-    
+
+    #region Constants
+
     private const string DatasetFileName = "DataSet.json";
 
-    /// <summary>
-    /// Path for saving the dataset
-    /// </summary>
-    public string Path { get; set; } = String.Empty;
+    #endregion
 
-    public List<Data.Unit> Units { get; set; } = [];
-    public List<Data.Action> Actions { get; set; } = [];
+    #region public
+    
+    /// Path for saving the dataset
+    public string Path { get; private set; } = String.Empty;
+
+    public List<Unit> Units { get; private set; } = [];
+    public List<Action> Actions { get; private set; } = [];
+
+    #endregion
 
     #endregion
 
@@ -31,7 +36,7 @@ public class DataSet
     /// <summary>
     /// Creates a empty Dataset
     /// </summary>
-    public DataSet()
+    private DataSet()
     {
         
     }
@@ -40,7 +45,7 @@ public class DataSet
     /// Deserializes a dataset from the given file
     /// </summary>
     /// <param name="path">Path to the dataset file</param>
-    public DataSet(string path)
+    internal DataSet(string path)
     {
         if (String.IsNullOrEmpty(path))
         {

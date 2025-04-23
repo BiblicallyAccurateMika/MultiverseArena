@@ -1,5 +1,4 @@
 ﻿using MA_Core.Data;
-using MA_Core.Logic.Objects;
 
 namespace MA_Test.Tests;
 
