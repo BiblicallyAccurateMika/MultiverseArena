@@ -7,6 +7,8 @@ namespace MA_Core.Data;
 /// </summary>
 public class DataSetJson
 {
+    public string Name { get; set; }
+    
     public ActionJson[] Actions { get; init; }
     public UnitJson[] Units { get; init; }
 

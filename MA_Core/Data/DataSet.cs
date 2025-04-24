@@ -24,6 +24,7 @@ public class DataSet
     /// Path for saving the dataset
     public string Path { get; private set; } = String.Empty;
 
+    public string Name { get; private set; } = String.Empty;
     public List<Unit> Units { get; private set; } = [];
     public List<Action> Actions { get; private set; } = [];
 
@@ -75,6 +76,7 @@ public class DataSet
     }
     private void applyJsonConfig(DataSetJson datasetData)
     {
+        Name = datasetData.Name;
         Actions = datasetData.Actions.Select(x => x.AsAction()).ToList();
         Units = datasetData.Units.Select(x => x.AsUnit(Actions)).ToList();
     }

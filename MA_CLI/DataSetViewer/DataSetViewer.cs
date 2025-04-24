@@ -158,7 +158,7 @@ public static class DataSetViewer
 
     private class OverviewView(DataSet data) : View(data, null)
     {
-        protected override string ViewName => "OVERVIEW";
+        protected override string ViewName => Data.Name;
 
         protected override Interaction[] Interactions =>
         [
@@ -169,6 +169,7 @@ public static class DataSetViewer
         protected override void render(StringBuilder builder)
         {
             builder.AppendLine($"Path: {Data.Path}");
+            builder.AppendLine($"Name: {Data.Name}");
             builder.AppendLine($"Actions: {Data.Actions.Count}");
             builder.AppendLine($"Units: {Data.Units.Count}");
         }
