@@ -103,7 +103,9 @@ public static class DataSetViewer
         input ??= String.Empty;
         return input;
     }
-    
+
+    #region Views
+
     private abstract class View(DataSet data, View? parent)
     {
         protected record Interaction(string Key, string Name, Func<string?, View?> Action, Func<string?, bool>? KeyCheck = null);
@@ -186,7 +188,7 @@ public static class DataSetViewer
         {
             foreach (var action in Data.Actions)
             {
-                builder.AppendLine($"{action.ID} - {action.Name}");
+                builder.AppendLine(action.ToCliShortString());
             }
         }
     }
@@ -214,14 +216,22 @@ public static class DataSetViewer
         protected override string ViewName => "UNITS";
 
         protected override Interaction[] Interactions =>
-            [new("CodeName", "Unit Details", codename => new UnitDetailView(Data, this, codename!),
-                codename => Data.Units.Any(x => x.Codename == codename))];
+        [
+            new("CodeName", "Unit Details", codename => new UnitDetailView(Data, this, codename!), 
+                codename => Data.Units.Any(x => x.Codename == codename)),
+            new("Counter", "Unit Details (by counter)", counterStr =>
+            {
+                var counter = Int32.Parse(counterStr!) - 1;
+                return new UnitDetailView(Data, this, Data.Units[counter].Codename);
+            }, counterStr => Int32.TryParse(counterStr, out var counter) && counter > 0 && counter <= Data.Units.Count),
+        ];
         
         protected override void render(StringBuilder builder)
         {
-            foreach (var unit in Data.Units)
+            for (var i = 0; i < Data.Units.Count; i++)
             {
-                builder.AppendLine($"{unit.Codename}");
+                var unit = Data.Units[i];
+                builder.AppendLine($"{i + 1} - {unit.Codename}");
             }
         }
     }
@@ -266,7 +276,7 @@ public static class DataSetViewer
                 x.Defense.ToString().Length,
                 x.Aura.ToString().Length,
                 x.Willpower.ToString().Length,
-                x.Actions.Max(y => $"{y.ID} - {y.Name}".Length)
+                x.Actions.Max(y => y.ToCliShortString().Length)
             }.Max()));
 
             var divider = "+" + String.Join("+", columnWidths.Select(width => new string('-', width + 2))) + "+";
@@ -318,4 +328,6 @@ public static class DataSetViewer
             }
         }
     }
+
+    #endregion
 }
