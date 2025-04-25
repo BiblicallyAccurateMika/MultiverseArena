@@ -106,59 +106,12 @@ public static class DataSetViewer
 
     #region Views
 
-    private abstract class View(DataSet data, View? parent)
+    private abstract class DatasetView(DataSet data, View? parent) : View(parent)
     {
-        protected record Interaction(string Key, string Name, Func<string?, View?> Action, Func<string?, bool>? KeyCheck = null);
-        
-        protected abstract string ViewName { get; }
-        protected virtual Interaction[]? Interactions => null;
-
-        protected abstract void render(StringBuilder builder);
-        
-        private string Breadcrumbs => Parent == null ? ViewName : $"{Parent.Breadcrumbs} > {ViewName}";
         protected DataSet Data { get; } = data;
-        private View? Parent { get; } = parent;
-
-        private IEnumerable<Interaction> AllInteractions
-        {
-            get
-            {
-                var interactions = new List<Interaction>();
-                if (Interactions != null) interactions.AddRange(Interactions);
-                if (interactions.None(x => x.Key == "0")) interactions.Add(new Interaction("0", "Exit", _ => Parent));
-                return interactions.OrderBy(x => x.Key);
-            }
-        }
-
-        public void Render(string errorMessage = "")
-        {
-            var sb = new StringBuilder();
-            
-            sb.AppendLine($"==== {Breadcrumbs} ====");
-            render(sb);
-            sb.AppendLine();
-            sb.AppendLine("---- Actions ----");
-            foreach (var interaction in AllInteractions) sb.AppendLine($"[{interaction.Key}] {interaction.Name}");
-            sb.AppendLine();
-            if (errorMessage != "") sb.AppendLine(errorMessage);
-            sb.Append("Action: ");
-            
-            Console.Write(sb);
-        }
-
-        public View? HandleInput(string? input)
-        {
-            foreach (var interaction in AllInteractions)
-            {
-                var check = interaction.KeyCheck ?? (key => key == interaction.Key);
-                if (check(input)) return interaction.Action(input);
-            }
-
-            throw new Exception("Invalid input!");
-        }
     }
 
-    private class OverviewView(DataSet data) : View(data, null)
+    private class OverviewView(DataSet data) : DatasetView(data, null)
     {
         protected override string ViewName => Data.Name;
 
@@ -177,7 +130,7 @@ public static class DataSetViewer
         }
     }
 
-    private class ActionsView(DataSet data, View parent) : View(data, parent)
+    private class ActionsView(DataSet data, View parent) : DatasetView(data, parent)
     {
         protected override string ViewName => "ACTIONS";
         
@@ -193,7 +146,7 @@ public static class DataSetViewer
         }
     }
 
-    private class ActionDetailView : View
+    private class ActionDetailView : DatasetView
     {
         protected override string ViewName => _action.ToCliShortString();
         private readonly Action _action;
@@ -211,7 +164,7 @@ public static class DataSetViewer
         }
     }
 
-    private class UnitsView(DataSet data, View parent) : View(data, parent)
+    private class UnitsView(DataSet data, View parent) : DatasetView(data, parent)
     {
         protected override string ViewName => "UNITS";
 
@@ -236,7 +189,7 @@ public static class DataSetViewer
         }
     }
     
-    private class UnitDetailView : View
+    private class UnitDetailView : DatasetView
     {
         protected override string ViewName => _unit.Codename;
         
