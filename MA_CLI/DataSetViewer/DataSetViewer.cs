@@ -69,7 +69,7 @@ public static class DataSetViewer
 
     private static IdleResponse handleIdle(LoadedState state)
     {
-        View? view = new OverviewView(state.DataSet);
+        View? view = new OverviewView(null!, state.DataSet);
         var errorMessage = "";
 
         while (true)
@@ -106,19 +106,19 @@ public static class DataSetViewer
 
     #region Views
 
-    private abstract class DatasetView(DataSet data, View? parent) : View(parent)
+    private abstract class DatasetView(View parent, DataSet data) : View(parent)
     {
         protected DataSet Data { get; } = data;
     }
 
-    private class OverviewView(DataSet data) : DatasetView(data, null)
+    private class OverviewView(View parent, DataSet data) : DatasetView(parent, data)
     {
         protected override string ViewName => Data.Name;
 
         protected override Interaction[] Interactions =>
         [
-            new("1", "View Actions", _ => new ActionsView(Data, this)),
-            new("2", "View Units", _ => new UnitsView(Data, this))
+            new("1", "View Actions", _ => new ActionsView(this, Data)),
+            new("2", "View Units", _ => new UnitsView(this, Data))
         ];
 
         protected override void render(StringBuilder builder)
@@ -130,12 +130,12 @@ public static class DataSetViewer
         }
     }
 
-    private class ActionsView(DataSet data, View parent) : DatasetView(data, parent)
+    private class ActionsView(View parent, DataSet data) : DatasetView(parent, data)
     {
         protected override string ViewName => "ACTIONS";
         
         protected override Interaction[] Interactions => 
-            [new("ID", "Action Details", id => new ActionDetailView(Data, this, id!), id => Data.Actions.Any(x => x.ID == id))];
+            [new("ID", "Action Details", id => new ActionDetailView(this, Data, id!), id => Data.Actions.Any(x => x.ID == id))];
 
         protected override void render(StringBuilder builder)
         {
@@ -151,7 +151,7 @@ public static class DataSetViewer
         protected override string ViewName => _action.ToCliShortString();
         private readonly Action _action;
         
-        public ActionDetailView(DataSet data, View parent, string id) : base(data, parent)
+        public ActionDetailView(View parent, DataSet data, string id) : base(parent, data)
         {
             _action = Data.Actions.First(x => x.ID == id);
         }
@@ -164,18 +164,18 @@ public static class DataSetViewer
         }
     }
 
-    private class UnitsView(DataSet data, View parent) : DatasetView(data, parent)
+    private class UnitsView(View parent, DataSet data) : DatasetView(parent, data)
     {
         protected override string ViewName => "UNITS";
 
         protected override Interaction[] Interactions =>
         [
-            new("CodeName", "Unit Details", codename => new UnitDetailView(Data, this, codename!), 
+            new("CodeName", "Unit Details", codename => new UnitDetailView(this, Data, codename!), 
                 codename => Data.Units.Any(x => x.Codename == codename)),
             new("Counter", "Unit Details (by counter)", counterStr =>
             {
                 var counter = Int32.Parse(counterStr!) - 1;
-                return new UnitDetailView(Data, this, Data.Units[counter].Codename);
+                return new UnitDetailView(this, Data, Data.Units[counter].Codename);
             }, counterStr => Int32.TryParse(counterStr, out var counter) && counter > 0 && counter <= Data.Units.Count),
         ];
         
@@ -194,11 +194,11 @@ public static class DataSetViewer
         protected override string ViewName => _unit.Codename;
         
         protected override Interaction[] Interactions => 
-            [new("Action ID", "Action Details", id => new ActionDetailView(Data, this, id!), id => Data.Actions.Any(x => x.ID == id))];
+            [new("Action ID", "Action Details", id => new ActionDetailView(this, Data, id!), id => Data.Actions.Any(x => x.ID == id))];
         
         private readonly Unit _unit;
         
-        public UnitDetailView(DataSet data, View parent, string codename) : base(data, parent)
+        public UnitDetailView(View parent, DataSet data, string codename) : base(parent, data)
         {
             _unit = Data.Units.First(x => x.Codename == codename);
         }
