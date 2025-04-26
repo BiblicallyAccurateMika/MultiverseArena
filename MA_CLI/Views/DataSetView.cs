@@ -18,8 +18,12 @@ public class DataSetView(View parent) : View<DataSetViewerProcessManager, DataSe
                 case SelectDataSetRequest:
                     return
                     [
-                        new Interaction("ID", "View Dataset", _ => throw new NotImplementedException(), _ => false),
-                        new Interaction("Path", "View Dataset (by path)", path => response(new SelectDataSetResponse(path!)), path => !String.IsNullOrWhiteSpace(path))
+                        new Interaction("ID", "View Dataset",
+                            idStr => response(new SelectDataSetResponse(DataSets[Int32.Parse(idStr) - 1])),
+                            idStr => Int32.TryParse(idStr, out var id) && id > 0 && id <= DataSets.Length),
+                        new Interaction("Path", "View Dataset (by path)",
+                            path => response(new SelectDataSetResponse(path)),
+                            path => !String.IsNullOrWhiteSpace(path))
                     ];
                 case IdleRequest:
                     //todo: maybe add Dataset to Request so we dont have to cast it here
@@ -48,7 +52,12 @@ public class DataSetView(View parent) : View<DataSetViewerProcessManager, DataSe
         switch (ProcessManager.CurrentState)
         {
             case EmptyState:
-                //todo: show datasets from path in settings
+                for (var i = 0; i < DataSets.Length; i++)
+                {
+                    var dataSet = DataSets[i];
+
+                    builder.AppendLine($"{i + 1} - {Path.GetFileName(dataSet)}");
+                }
                 break;
             case LoadedState loaded:
                 builder.AppendLine($"Path: {loaded.DataSet.Path}");
@@ -58,31 +67,15 @@ public class DataSetView(View parent) : View<DataSetViewerProcessManager, DataSe
                 break;
         }
     }
-    
+
+    private string[]? _dataSets;
+    private string[] DataSets => _dataSets ??= DataSet.GetDataSetsFromFolder(Settings.Instance.DataSetFolderPath);
+
     #region Subviews
 
     private abstract class DatasetView(View parent, DataSet data) : View(parent)
     {
         protected DataSet Data { get; } = data;
-    }
-
-    private class OverviewView(View parent, DataSet data) : DatasetView(parent, data)
-    {
-        protected override string ViewName => Data.Name;
-
-        protected override Interaction[] Interactions =>
-        [
-            new("1", "View Actions", _ => view(new ActionsView(this, Data))),
-            new("2", "View Units", _ => view(new UnitsView(this, Data)))
-        ];
-
-        protected override void render(StringBuilder builder)
-        {
-            builder.AppendLine($"Path: {Data.Path}");
-            builder.AppendLine($"Name: {Data.Name}");
-            builder.AppendLine($"Actions: {Data.Actions.Count}");
-            builder.AppendLine($"Units: {Data.Units.Count}");
-        }
     }
 
     private class ActionsView(View parent, DataSet data) : DatasetView(parent, data)

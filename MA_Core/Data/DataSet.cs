@@ -15,7 +15,8 @@ public class DataSet
 
     #region constants
 
-    private const string DatasetFileName = "DataSet.json";
+    public const string DatasetFileEnding = ".dataset";
+    private const string DatasetJsonFileName = "DataSet.json";
 
     #endregion
 
@@ -51,14 +52,15 @@ public class DataSet
         if (String.IsNullOrEmpty(path)) throw new ArgumentNullException(nameof(path));
         if (path.StartsWith('"') && path.EndsWith('"')) path = path[1..^1]; // Removes quotation marks
         if (!File.Exists(path)) throw new FileNotFoundException("File not found", path);
+        if (!path.EndsWith(DatasetFileEnding)) throw new ArgumentException("Invalid file ending");
         
         var zip = ZipFile.OpenRead(path);
-        if (!zip.Entries.Any(x => x.Name.Equals(DatasetFileName)))
-            throw new FileNotFoundException($"Dataset does not contain '{DatasetFileName}'", path);
+        if (!zip.Entries.Any(x => x.Name.Equals(DatasetJsonFileName)))
+            throw new FileNotFoundException($"Dataset does not contain '{DatasetJsonFileName}'", path);
         
         Path = path;
         
-        var file = zip.Entries.First(x => x.Name.Equals(DatasetFileName));
+        var file = zip.Entries.First(x => x.Name.Equals(DatasetJsonFileName));
 
         var json = JsonDocument.Parse(file.Open());
         var datasetData = json.Deserialize<DataSetJson>();
@@ -84,6 +86,13 @@ public class DataSet
     #endregion
 
     #region Methods
+
+    public static string[] GetDataSetsFromFolder(string folderPath)
+    {
+        if (!Directory.Exists(folderPath)) throw new DirectoryNotFoundException($"Directory not found: {folderPath}");
+        var files = Directory.GetFiles(folderPath);
+        return files.Where(x => x.EndsWith(DatasetFileEnding)).ToArray();
+    }
 
     #endregion
 }
