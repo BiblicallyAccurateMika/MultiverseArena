@@ -83,7 +83,7 @@ public class DataSetView(View parent) : View<DataSetViewerProcessManager, DataSe
         protected override string ViewName => "ACTIONS";
         
         protected override Interaction[] Interactions => 
-            [new("ID", "Action Details", id => view(new ActionDetailView(this, Data, id!)), id => Data.Actions.Any(x => x.ID == id))];
+            [new("ID", "Action Details", id => view(new ActionDetailView(this, Data, id)), id => Data.Actions.Any(x => x.ID == id))];
 
         protected override void render(StringBuilder builder)
         {
@@ -118,11 +118,11 @@ public class DataSetView(View parent) : View<DataSetViewerProcessManager, DataSe
 
         protected override Interaction[] Interactions =>
         [
-            new("CodeName", "Unit Details", codename => view(new UnitDetailView(this, Data, codename!)), 
+            new("CodeName", "Unit Details", codename => view(new UnitDetailView(this, Data, codename)), 
                 codename => Data.Units.Any(x => x.Codename == codename)),
             new("Counter", "Unit Details (by counter)", counterStr =>
             {
-                var counter = Int32.Parse(counterStr!) - 1;
+                var counter = Int32.Parse(counterStr) - 1;
                 return view(new UnitDetailView(this, Data, Data.Units[counter].Codename));
             }, counterStr => Int32.TryParse(counterStr, out var counter) && counter > 0 && counter <= Data.Units.Count),
         ];
@@ -142,7 +142,7 @@ public class DataSetView(View parent) : View<DataSetViewerProcessManager, DataSe
         protected override string ViewName => _unit.Codename;
         
         protected override Interaction[] Interactions => 
-            [new("Action ID", "Action Details", id => view(new ActionDetailView(this, Data, id!)), id => Data.Actions.Any(x => x.ID == id))];
+            [new("Action ID", "Action Details", id => view(new ActionDetailView(this, Data, id)), id => Data.Actions.Any(x => x.ID == id))];
         
         private readonly Unit _unit;
         

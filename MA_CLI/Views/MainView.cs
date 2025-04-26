@@ -15,7 +15,7 @@ public class MainView() : View(null)
     {
         Console.Clear();
         Environment.Exit(0);
-        return InteractionResult.Empty();;
+        return InteractionResult.Empty();
     }
 
     protected override void render(StringBuilder builder) { }
