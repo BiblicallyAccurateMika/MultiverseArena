@@ -10,7 +10,8 @@ public class DataSetViewerProcessManager : IProcessManager<DataSetViewerState>
     
     public DataSetViewerState CurrentState { get; private set; }
     public IInteractionRequest? CurrentRequest { get; private set; }
-    
+
+    public DataSetViewerProcessManager() : this(null) { }
     public DataSetViewerProcessManager(DataSetViewerState? initialState = null)
     {
         initialState ??= new EmptyState();

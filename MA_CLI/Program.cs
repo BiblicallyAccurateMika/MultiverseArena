@@ -1,18 +1,17 @@
-﻿namespace Ma_CLI;
+﻿using System.Text;
+using Ma_CLI.Views;
+using MA_Core.Abstract;
+
+namespace Ma_CLI;
 
 public class Program
 {
-    private record ActionEntry(string Name, Action Action);
-    
     public static void Main(string[] args)
     {
         var run = true;
-
-        var actions = new List<ActionEntry>
-        {
-            new("Exit", () => run = false),
-            new("Viewer", DataSetViewer.Run)
-        };
+        var endMessage = "";
+        View view = new MainView();
+        IInteractionResponse? response = null;
 
         while (run)
         {
@@ -20,38 +19,31 @@ public class Program
             {
                 Console.Clear();
                 
-                for (var i = 0; i < actions.Count; i++)
-                {
-                    Console.WriteLine($"[{i}] {actions[i].Name}");
-                }
+                view.Process(response);
+                response = null;
+                view.Render();
+                var result = view.HandleInput(Console.ReadLine());
 
-                var input = Console.ReadLine();
-
-                if (Int32.TryParse(input, out var result) && result >= 0 && result < actions.Count)
+                if (result.NewView != null)
                 {
-                    try
-                    {
-                        actions[result].Action();
-                    }
-                    catch (Exception e)
-                    {
-                        Console.WriteLine("Error in action!");
-                        Console.WriteLine(e);
-                    }
+                    view = result.NewView;
                 }
-                else
+                else if (result.InteractionResponse != null)
                 {
-                    Console.WriteLine("Invalid input!");
+                    response = result.InteractionResponse;
                 }
             }
             catch (Exception e)
             {
-                Console.WriteLine("Error on main method!");
-                Console.WriteLine(e);
+                var sb = new StringBuilder();
+                sb.AppendLine("Error on main method!");
+                sb.AppendLine(e.Message);
+                endMessage = sb.ToString();
                 run = false;
             }
         }
         
         Console.Clear();
+        Console.WriteLine(endMessage);
     }
 }

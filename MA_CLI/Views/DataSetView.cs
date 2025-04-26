@@ -1,110 +1,65 @@
 ﻿using System.Text;
 using Ma_CLI.Util;
-using MA_Core.Abstract;
 using MA_Core.Data;
 using MA_Core.Logic.ProcessManagers.DataSetViewer;
-using MA_Core.Util;
 using Action = MA_Core.Data.Action;
 
-// ReSharper disable once CheckNamespace
-namespace Ma_CLI;
+namespace Ma_CLI.Views;
 
-public static class DataSetViewer
+public class DataSetView(View parent) : View<DataSetViewerProcessManager, DataSetViewerState>(parent)
 {
-    private class ExitException : Exception;
-    
-    public static void Run()
+    protected override string ViewName => "DataSet Viewer";
+    protected override Interaction[] Interactions
     {
-        DataSetViewerProcessManager processManager = new();
-        IInteractionResponse? response = null;
-
-        while (true)
+        get
         {
-            try
+            switch (ProcessManager.CurrentRequest)
             {
-                var result = processManager.Process(response);
-
-                if (result.IsComplete)
-                {
-                    response = null;
-                }
-                else
-                {
-                    switch (result.InteractionRequest)
-                    {
-                        case SelectDataSetRequest:
-                            response = handleSelect();
-                            break;
-                        case IdleRequest:
-                            response = handleIdle((LoadedState) processManager.CurrentState);
-                            break;
-                        default:
-                            throw new ArgumentOutOfRangeException();
-                    }
-                }
-            }
-            catch (ExitException)
-            {
-                return;
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine($"Exception: {e}");
-                response = null;
-                Thread.Sleep(1000);
+                case SelectDataSetRequest:
+                    return
+                    [
+                        new Interaction("ID", "View Dataset", _ => throw new NotImplementedException(), _ => false),
+                        new Interaction("Path", "View Dataset (by path)", path => response(new SelectDataSetResponse(path!)), path => !String.IsNullOrWhiteSpace(path))
+                    ];
+                case IdleRequest:
+                    //todo: maybe add Dataset to Request so we dont have to cast it here
+                    var data = (ProcessManager.CurrentState as LoadedState)!.DataSet;
+                    return
+                    [
+                        new Interaction("1", "View Actions", _ => view(new ActionsView(this, data))),
+                        new Interaction("2", "View Units", _ => view(new UnitsView(this, data)))
+                    ];
+                default: return null!;
             }
         }
     }
 
-    private static SelectDataSetResponse handleSelect()
+    protected override InteractionResult exit()
     {
-        Console.Clear();
-        Console.WriteLine("Select DataSet");
-        Console.Write("Path: ");
-
-        var input = readInput();
-        if (input == "0") throw new ExitException();
-        return new SelectDataSetResponse(input);
+        switch (ProcessManager.CurrentState)
+        {
+            case LoadedState: return response(new IdleResponse(true));
+            default: return base.exit();
+        }
     }
 
-    private static IdleResponse handleIdle(LoadedState state)
+    protected override void render(StringBuilder builder)
     {
-        View? view = new OverviewView(null!, state.DataSet);
-        var errorMessage = "";
-
-        while (true)
+        switch (ProcessManager.CurrentState)
         {
-            try
-            {
-                if (view is null)
-                {
-                    return new IdleResponse(true);
-                }
-                
-                Console.Clear();
-                view.Render(errorMessage);
-                view = view.HandleInput(readInput()).NewView;
-                
-                errorMessage = "";
-            }
-            catch (Exception e)
-            {
-                if (typeof(ExitException) == e.GetType()) throw;
-                errorMessage = e.Message;
-            }
+            case EmptyState:
+                //todo: show datasets from path in settings
+                break;
+            case LoadedState loaded:
+                builder.AppendLine($"Path: {loaded.DataSet.Path}");
+                builder.AppendLine($"Name: {loaded.DataSet.Name}");
+                builder.AppendLine($"Actions: {loaded.DataSet.Actions.Count}");
+                builder.AppendLine($"Units: {loaded.DataSet.Units.Count}");
+                break;
         }
-        // ReSharper disable once FunctionNeverReturns
     }
     
-    private static string readInput()
-    {
-        var input = Console.ReadLine();
-        if (input == "exit") throw new ExitException();
-        input ??= String.Empty;
-        return input;
-    }
-
-    #region Views
+    #region Subviews
 
     private abstract class DatasetView(View parent, DataSet data) : View(parent)
     {
