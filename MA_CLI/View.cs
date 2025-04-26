@@ -18,10 +18,11 @@ public abstract class View(View? parent)
     }
     
     protected static InteractionResult done() => InteractionResult.Empty();
+    protected static InteractionResult action(Action action) { action(); return done(); }
     protected static InteractionResult view(View view) => InteractionResult.View(view);
     protected static InteractionResult response(IInteractionResponse response) => InteractionResult.Response(response);
 
-    protected record Interaction(string Key, string Name, Func<string?, InteractionResult> Action, Func<string?, bool>? KeyCheck = null);
+    protected record Interaction(string Key, string Name, Func<string, InteractionResult> Action, Func<string?, bool>? KeyCheck = null);
         
     protected abstract string ViewName { get; }
     protected virtual Interaction[]? Interactions => null;
@@ -29,8 +30,8 @@ public abstract class View(View? parent)
     protected abstract void render(StringBuilder builder);
     protected virtual InteractionResult exit() => InteractionResult.View(Parent!);
 
-    private string Breadcrumbs => Parent == null ? ViewName : $"{Parent.Breadcrumbs} > {ViewName}";
-    public View? Parent { get; } = parent;
+    protected virtual string Breadcrumbs => Parent == null ? ViewName : $"{Parent.Breadcrumbs} > {ViewName}";
+    protected View? Parent { get; } = parent;
 
     private IEnumerable<Interaction> AllInteractions
     {
@@ -63,7 +64,7 @@ public abstract class View(View? parent)
         foreach (var interaction in AllInteractions)
         {
             var check = interaction.KeyCheck ?? (key => key == interaction.Key);
-            if (check(input)) return interaction.Action(input);
+            if (check(input)) return interaction.Action(input!);
         }
 
         throw new Exception("Invalid input!");

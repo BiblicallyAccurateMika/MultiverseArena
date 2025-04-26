@@ -13,15 +13,16 @@ public class Settings
     #region Singleton
 
     private static Settings? _instance;
-    public static Settings Instance => _instance ??= JsonSerializer.Deserialize<Settings>(File.ReadAllText(SettingsFilePath))!;
-
-    private Settings() { }
+    public static Settings Instance =>
+        _instance ??= File.Exists(SettingsFilePath)
+            ? JsonSerializer.Deserialize<Settings>(File.ReadAllText(SettingsFilePath))!
+            : new Settings();
 
     #endregion
 
     #region Settings
 
-    public string DataSetFolderPath { get; init; } = null!;
+    public string DataSetFolderPath { get; set; } = String.Empty;
 
     #endregion
 
@@ -30,6 +31,12 @@ public class Settings
     public void Save()
     {
         File.WriteAllText(SettingsFilePath, JsonSerializer.Serialize(this));
+    }
+
+    public void Edit(Action<Settings> action)
+    {
+        action(Instance);
+        Save();
     }
 
     #endregion
