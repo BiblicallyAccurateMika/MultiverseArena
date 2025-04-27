@@ -109,6 +109,8 @@ public class DataSetView(View parent) : View<DataSetViewerProcessManager, DataSe
             builder.AppendLine($"ID: {_action.ID}");
             builder.AppendLine($"Name: {_action.Name}");
             builder.AppendLine($"Description: {_action.Description}");
+            
+            //todo: show the actionplan
         }
     }
 
