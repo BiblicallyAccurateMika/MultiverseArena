@@ -8,18 +8,18 @@ public abstract class View(View? parent)
     public record InteractionResult
     {
         public View? NewView { get; private init; }
-        public IInteractionResponse? InteractionResponse { get; private init; }
+        public InteractionResponse? InteractionResponse { get; private init; }
         
         private InteractionResult() { }
         public static InteractionResult Empty() => new();
         public static InteractionResult View(View view) => new() {NewView = view};
-        public static InteractionResult Response(IInteractionResponse response) => new() {InteractionResponse = response};
+        public static InteractionResult Response(InteractionResponse response) => new() {InteractionResponse = response};
     }
     
     protected static InteractionResult done() => InteractionResult.Empty();
     protected static InteractionResult action(Action action) { action(); return done(); }
     protected static InteractionResult view(View view) => InteractionResult.View(view);
-    protected static InteractionResult response(IInteractionResponse response) => InteractionResult.Response(response);
+    protected static InteractionResult response(InteractionResponse response) => InteractionResult.Response(response);
 
     protected record Interaction(string Key, string Name, Func<string, InteractionResult> Action, Func<string?, bool>? KeyCheck = null);
         
@@ -69,24 +69,17 @@ public abstract class View(View? parent)
         throw new Exception("Invalid input!");
     }
 
-    public virtual void Process(IInteractionResponse? response = null) { }
+    public virtual void Process(InteractionResponse? response = null) { }
 }
 
 public abstract class View<TProcessManager, TState>(View? parent) : View(parent)
-    where TProcessManager : IProcessManager<TState>, new()
-    where TState : class
+    where TProcessManager : ProcessManager<TState>, new()
+    where TState : StateHolder, new()
 {
     protected TProcessManager ProcessManager { get; } = new();
 
-    public override void Process(IInteractionResponse? response = null)
+    public override void Process(InteractionResponse? response = null)
     {
-        while (true)
-        {
-            var result = ProcessManager.Process(response);
-
-            if (!result.IsComplete) return; // Exits if the ProcessManager needs user input
-
-            response = null;
-        }
+        ProcessManager.Run(response);
     }
 }

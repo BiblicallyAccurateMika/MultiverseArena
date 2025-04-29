@@ -3,7 +3,7 @@ using Ma_CLI.Views;
 using MA_Core.Abstract;
 
 View view = new MainView();
-IInteractionResponse? response = null;
+InteractionResponse? response = null;
 var errorMessage = String.Empty;
 
 while (true)

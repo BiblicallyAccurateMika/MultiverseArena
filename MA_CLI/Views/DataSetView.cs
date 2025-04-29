@@ -1,19 +1,19 @@
 ﻿using System.Text;
 using Ma_CLI.Util;
 using MA_Core.Data;
-using MA_Core.Logic.ProcessManagers.DataSetViewer;
+using MA_Core.Logic.ProcessManagers;
 using Action = MA_Core.Data.Action;
 
 namespace Ma_CLI.Views;
 
-public class DataSetView(View parent) : View<DataSetViewerProcessManager, DataSetViewerState>(parent)
+public class DataSetView(View parent) : View<DataSetViewProcessManager, DataSetViewStateHolder>(parent)
 {
     protected override string ViewName => "DataSet Viewer";
     protected override Interaction[] Interactions
     {
         get
         {
-            switch (ProcessManager.CurrentRequest)
+            switch (ProcessManager.Request)
             {
                 case SelectDataSetRequest:
                     return
@@ -27,7 +27,7 @@ public class DataSetView(View parent) : View<DataSetViewerProcessManager, DataSe
                     ];
                 case IdleRequest:
                     //todo: maybe add Dataset to Request so we dont have to cast it here
-                    var data = (ProcessManager.CurrentState as LoadedState)!.DataSet;
+                    var data = (ProcessManager.StateHolder.CurrentState as DataSetViewStateHolder.LoadedState)!.DataSet;
                     return
                     [
                         new Interaction("1", "View Actions", _ => view(new ActionsView(this, data))),
@@ -40,18 +40,18 @@ public class DataSetView(View parent) : View<DataSetViewerProcessManager, DataSe
 
     protected override InteractionResult exit()
     {
-        switch (ProcessManager.CurrentState)
+        switch (ProcessManager.StateHolder.CurrentState)
         {
-            case LoadedState: return response(new IdleResponse(true));
+            case DataSetViewStateHolder.LoadedState: return response(new IdleResponse(true));
             default: return base.exit();
         }
     }
 
     protected override void render(StringBuilder builder)
     {
-        switch (ProcessManager.CurrentState)
+        switch (ProcessManager.StateHolder.CurrentState)
         {
-            case EmptyState:
+            case DataSetViewStateHolder.EmptyState:
                 for (var i = 0; i < DataSets.Length; i++)
                 {
                     var dataSet = DataSets[i];
@@ -59,7 +59,7 @@ public class DataSetView(View parent) : View<DataSetViewerProcessManager, DataSe
                     builder.AppendLine($"{i + 1} - {Path.GetFileName(dataSet)}");
                 }
                 break;
-            case LoadedState loaded:
+            case DataSetViewStateHolder.LoadedState loaded:
                 builder.AppendLine($"Path: {loaded.DataSet.Path}");
                 builder.AppendLine($"Name: {loaded.DataSet.Name}");
                 builder.AppendLine($"Actions: {loaded.DataSet.Actions.Count}");
