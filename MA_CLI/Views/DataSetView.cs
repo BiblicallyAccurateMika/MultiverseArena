@@ -1,8 +1,10 @@
 ﻿using System.Text;
 using Ma_CLI.Util;
 using MA_Core.Data;
+using MA_Core.Data.Enums;
 using MA_Core.Logic.ProcessManagers;
 using Action = MA_Core.Data.Action;
+using Range = MA_Core.Data.Enums.Range;
 
 namespace Ma_CLI.Views;
 
@@ -26,7 +28,6 @@ public class DataSetView(View parent) : View<DataSetViewProcessManager, DataSetV
                             path => !String.IsNullOrWhiteSpace(path))
                     ];
                 case IdleRequest:
-                    //todo: maybe add Dataset to Request so we dont have to cast it here
                     var data = (ProcessManager.StateHolder.CurrentState as DataSetViewStateHolder.LoadedState)!.DataSet;
                     return
                     [
@@ -109,8 +110,53 @@ public class DataSetView(View parent) : View<DataSetViewProcessManager, DataSetV
             builder.AppendLine($"ID: {_action.ID}");
             builder.AppendLine($"Name: {_action.Name}");
             builder.AppendLine($"Description: {_action.Description}");
+
+            if (_action.Steps == null) return;
             
-            //todo: show the actionplan
+            builder.AppendLine();
+            builder.AppendLine("---- ActionPlan ----");
+            for (var i = 0; i < _action.Steps.Length; i++)
+            {
+                var id = i + 1;
+                var actionStep = _action.Steps[i];
+                var stepDescription = actionStep.Description;
+
+                switch (actionStep)
+                {
+                    case ActionStep.SwapPosition: builder.AppendLine($"{id} - Moves this unit to the selected field"); break;
+                    case ActionStep.Select.Self: builder.AppendLine($"{id} - Selects this unit"); break;
+                    case ActionStep.Select.Arbitrary arbitrary:
+                        string faction; switch (arbitrary.Faction)
+                        {
+                            default: case Faction.Any: faction = ""; break;
+                            case Faction.Friend: faction = " friendly"; break;
+                            case Faction.Enemy: faction = " enemy"; break;
+                        }
+                        string range; switch (arbitrary.Range)
+                        {
+                            default: case Range.All: range = ""; break;
+                            case Range.Melee: range = " in melee range"; break;
+                            case Range.Ranged: range = " in ranged range"; break;
+                        }
+                        var self = arbitrary.AllowSelf ? " (including self)" : "";
+
+                        switch (arbitrary)
+                        {
+                            case ActionStep.Select.Arbitrary.Automatic: builder.AppendLine($"{id} - Selects all{faction} units{range}{self}"); break;
+                            case ActionStep.Select.Arbitrary.Manual manual:
+                                var upTo = manual.UpToSelectionCount ? " up to" : "";
+                                var type = manual.EmptyFieldAllowed ? "field" : "unit";
+                                var ending = manual.SelectionCount > 1 ? "s" : "";
+                                builder.AppendLine($"{id} - Lets user select{upTo} {manual.SelectionCount}{faction} {type}{ending}{range}{self}");
+                                break;
+                        }
+                        break;
+                    case ActionStep.PhysicalAttack physicalAttack:
+                        builder.AppendLine($"{id} - Makes a physical attack with Power {physicalAttack.Power} and Accuracy {physicalAttack.Accuracy}");
+                        break;
+                    default: builder.AppendLine($"{id} - (Generic Message) {stepDescription}"); break;
+                }
+            }
         }
     }
 
