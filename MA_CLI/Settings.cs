@@ -20,9 +20,16 @@ public class Settings
 
     #endregion
 
+    #region Enums
+
+    public enum ActionPlanViewType {Hybrid, OnlyData, OnlyDetail}
+
+    #endregion
+
     #region Settings
 
     public string DataSetFolderPath { get; set; } = String.Empty;
+    public ActionPlanViewType ActionPlanView { get; set; } = ActionPlanViewType.Hybrid;
 
     #endregion
 

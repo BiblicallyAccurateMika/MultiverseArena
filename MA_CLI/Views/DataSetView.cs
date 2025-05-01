@@ -118,13 +118,48 @@ public class DataSetView(View parent) : View<DataSetViewProcessManager, DataSetV
             for (var i = 0; i < _action.Steps.Length; i++)
             {
                 var id = i + 1;
-                var actionStep = _action.Steps[i];
-                var stepDescription = actionStep.Description;
 
-                switch (actionStep)
+                builder.Append($"{id} - ");
+                if (Settings.Instance.ActionPlanView != Settings.ActionPlanViewType.OnlyDetail) builder.Append($"{renderData(_action.Steps[i])} ");
+                if (Settings.Instance.ActionPlanView != Settings.ActionPlanViewType.OnlyData) builder.Append(renderDetail(_action.Steps[i]));
+                builder.AppendLine();
+            }
+
+            return;
+
+            string renderData(ActionStep step)
+            {
+                switch (step)
                 {
-                    case ActionStep.SwapPosition: builder.AppendLine($"{id} - Moves this unit to the selected field"); break;
-                    case ActionStep.Select.Self: builder.AppendLine($"{id} - Selects this unit"); break;
+                    case ActionStep.SwapPosition: return "[swap]";
+                    case ActionStep.Select.Self: return "[select.self]";
+                    case ActionStep.Select.Arbitrary.Automatic automatic:
+                        return $"[select.arbitrary.automatic|" +
+                               $"faction:{automatic.Faction}|" +
+                               $"range:{automatic.Range}|" +
+                               $"allowSelf:{automatic.AllowSelf}]";
+                    case ActionStep.Select.Arbitrary.Manual manual:
+                        return $"[select.arbitrary.manual|" +
+                               $"faction:{manual.Faction}|" +
+                               $"range:{manual.Range}|" +
+                               $"allowSelf:{manual.AllowSelf}|" +
+                               $"count:{manual.SelectionCount}|" +
+                               $"upTo:{manual.UpToSelectionCount}|" +
+                               $"empty:{manual.EmptyFieldAllowed}]";
+                    case ActionStep.PhysicalAttack physicalAttack:
+                        return $"[physicalAttack|" +
+                               $"power:{physicalAttack.Power}|" +
+                               $"accuracy:{physicalAttack.Accuracy}]";
+                }
+                return $"[NoDataviewForThisSteptype]";
+            }
+
+            string renderDetail(ActionStep step)
+            {
+                switch (step)
+                {
+                    case ActionStep.SwapPosition: return "Moves this unit to the selected field";
+                    case ActionStep.Select.Self: return "Selects this unit";
                     case ActionStep.Select.Arbitrary arbitrary:
                         string faction; switch (arbitrary.Faction)
                         {
@@ -142,20 +177,18 @@ public class DataSetView(View parent) : View<DataSetViewProcessManager, DataSetV
 
                         switch (arbitrary)
                         {
-                            case ActionStep.Select.Arbitrary.Automatic: builder.AppendLine($"{id} - Selects all{faction} units{range}{self}"); break;
+                            case ActionStep.Select.Arbitrary.Automatic: return $"Selects all{faction} units{range}{self}";
                             case ActionStep.Select.Arbitrary.Manual manual:
                                 var upTo = manual.UpToSelectionCount ? " up to" : "";
                                 var type = manual.EmptyFieldAllowed ? "field" : "unit";
                                 var ending = manual.SelectionCount > 1 ? "s" : "";
-                                builder.AppendLine($"{id} - Lets user select{upTo} {manual.SelectionCount}{faction} {type}{ending}{range}{self}");
-                                break;
+                                return  $"Lets the user select{upTo} {manual.SelectionCount}{faction} {type}{ending}{range}{self}";
                         }
                         break;
                     case ActionStep.PhysicalAttack physicalAttack:
-                        builder.AppendLine($"{id} - Makes a physical attack with Power {physicalAttack.Power} and Accuracy {physicalAttack.Accuracy}");
-                        break;
-                    default: builder.AppendLine($"{id} - (Generic Message) {stepDescription}"); break;
+                        return $"Makes a physical attack with Power {physicalAttack.Power} and Accuracy {physicalAttack.Accuracy}";
                 }
+                return $"(Generic Message) {step.Description}";
             }
         }
     }

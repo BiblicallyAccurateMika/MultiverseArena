@@ -16,6 +16,7 @@ public class SettingsView(View parent) : View(parent)
     protected override void render(StringBuilder builder)
     {
         builder.AppendLine($"1 - DataSetFolderPath: {Settings.Instance.DataSetFolderPath}");
+        builder.AppendLine($"2 - ActionPlanView: {Settings.Instance.ActionPlanView}");
 
         if (!_showHelp) return;
         builder.AppendLine();
@@ -33,6 +34,12 @@ public class SettingsView(View parent) : View(parent)
             if (Directory.Exists(path)) return true;
             throw new Exception("Path is invalid");
         }
+        if (command.StartsWith("2 ") || command.StartsWith("ActionPlanView "))
+        {
+            var value = command.Replace("ActionPlanView ", "").Replace("2 ", "");
+            if (value.Equals("0") || value.Equals("1") || value.Equals("2")) return true;
+            throw new Exception("Value is invalid");
+        }
 
         return false;
     }
@@ -42,6 +49,13 @@ public class SettingsView(View parent) : View(parent)
         {
             var path = command.Replace("DataSetFolderPath ", "").Replace("1 ", "");
             Settings.Instance.Edit(x => x.DataSetFolderPath = path);
+            return done();
+        }
+        if (command.StartsWith("2 ") || command.StartsWith("ActionPlanView "))
+        {
+            var valueStr = command.Replace("ActionPlanView ", "").Replace("2 ", "");
+            var value = (Settings.ActionPlanViewType)Int32.Parse(valueStr);
+            Settings.Instance.Edit(x => x.ActionPlanView = value);
             return done();
         }
 
