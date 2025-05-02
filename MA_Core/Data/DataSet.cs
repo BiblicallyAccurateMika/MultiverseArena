@@ -25,9 +25,9 @@ public class DataSet
     /// Path for saving the dataset
     public string Path { get; private set; } = String.Empty;
 
-    public string Name { get; private set; } = String.Empty;
-    public List<Unit> Units { get; private set; } = [];
+    public string Name { get; set; } = String.Empty;
     public List<Action> Actions { get; private set; } = [];
+    public List<Unit> Units { get; private set; } = [];
 
     #endregion
 

@@ -32,7 +32,16 @@ public class DataSetView(View parent) : View<DataSetViewProcessManager, DataSetV
                     return
                     [
                         new Interaction("1", "View Actions", _ => view(new ActionsView(this, data))),
-                        new Interaction("2", "View Units", _ => view(new UnitsView(this, data)))
+                        new Interaction("2", "View Units", _ => view(new UnitsView(this, data))),
+                        new Interaction("e", "Edit", command =>
+                        {
+                            var edit = "";
+                            if (command.StartsWith("e ")) edit = command.Substring(2);
+                            else if (command.StartsWith("edit ")) edit = command.Substring(4);
+                            
+                            var editArgs = edit.Split(' ');
+                            return response(new IdleResponseEdit(editArgs[0], editArgs[1..]));
+                        }, command => !String.IsNullOrWhiteSpace(command) && (command.StartsWith("e ") || command.StartsWith("edit ")))
                     ];
                 default: return null!;
             }
@@ -43,7 +52,7 @@ public class DataSetView(View parent) : View<DataSetViewProcessManager, DataSetV
     {
         switch (ProcessManager.StateHolder.CurrentState)
         {
-            case DataSetViewStateHolder.LoadedState: return response(new IdleResponse(true));
+            case DataSetViewStateHolder.LoadedState: return response(new IdleResponseUnload());
             default: return base.exit();
         }
     }

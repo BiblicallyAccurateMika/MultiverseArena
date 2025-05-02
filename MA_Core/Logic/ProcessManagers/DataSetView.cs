@@ -1,5 +1,6 @@
 ﻿using MA_Core.Abstract;
 using MA_Core.Data;
+using MA_Core.Logic.Managers;
 
 namespace MA_Core.Logic.ProcessManagers;
 
@@ -8,7 +9,7 @@ namespace MA_Core.Logic.ProcessManagers;
 public record DataSetViewStateHolder : StateHolder
 {
     public DataSetViewStateHolder() : this(CurrentState: null) { }
-    public DataSetViewStateHolder(BaseState? CurrentState = null)
+    private DataSetViewStateHolder(BaseState? CurrentState = null)
     {
         CurrentState ??= new EmptyState();
         this.CurrentState = CurrentState;
@@ -19,12 +20,14 @@ public record DataSetViewStateHolder : StateHolder
     public record EmptyState : BaseState;
     public static DataSetViewStateHolder Empty() => new(new EmptyState()); 
     
-    // Unload is only needed, because if we didn't have it we would automatically go into the Unload Process
     // todo: if there is more than one eligible process, return a request that ask which process should be run (bonus points if this behaviour can be configured)
-    public record LoadedState(DataSet DataSet, bool Unload = false) : BaseState;
-    public static DataSetViewStateHolder Loaded(DataSet dataSet, bool unload = false) => new(new LoadedState(dataSet, unload));
-
-    public BaseState CurrentState { get; init; }
+    public record LoadedState(DataSet DataSet) : BaseState;
+    public static DataSetViewStateHolder Loaded(DataSet dataSet) => new(new LoadedState(dataSet));
+    
+    public record UnloadState(DataSet DataSet) : BaseState;
+    public static DataSetViewStateHolder Unload(DataSet dataSet) => new(new UnloadState(dataSet));
+    
+    public BaseState CurrentState { get; }
 }
 
 #endregion
@@ -35,7 +38,8 @@ public record SelectDataSetRequest : InteractionRequest;
 public record SelectDataSetResponse(string Path) : InteractionResponse;
 
 public record IdleRequest : InteractionRequest;
-public record IdleResponse(bool UnloadDataSet = false) : InteractionResponse;
+public record IdleResponseUnload : InteractionResponse;
+public record IdleResponseEdit(string Key, params string[] Args) : InteractionResponse;
 
 #endregion
 
@@ -67,28 +71,34 @@ public class DataSetViewProcessManager : ProcessManager<DataSetViewStateHolder>
         {
             return response switch
             {
-                null => request(new SelectDataSetRequest()),
-                SelectDataSetResponse selectResponse => state(DataSetViewStateHolder.Loaded(new DataSet(selectResponse.Path))),
-                _ => throw new ArgumentException("Invalid response!", nameof(response))
-            };
-        }),
-        // Unload DataSet
-        new(isState<DataSetViewStateHolder.LoadedState>(state => state.Unload), response =>
-        {
-            return response switch
-            {
-                null => state(DataSetViewStateHolder.Empty()),
+                null => requestResult(new SelectDataSetRequest()),
+                SelectDataSetResponse selectResponse => stateResult(DataSetViewStateHolder.Loaded(new DataSet(selectResponse.Path))),
                 _ => throw new ArgumentException("Invalid response!", nameof(response))
             };
         }),
         // Idle
         new(isState<DataSetViewStateHolder.LoadedState>, response =>
         {
+            var state = (StateHolder.CurrentState as DataSetViewStateHolder.LoadedState)!;
+            switch (response)
+            {
+                case null:
+                    return requestResult(new IdleRequest());
+                case IdleResponseUnload:
+                    return stateResult(DataSetViewStateHolder.Unload(state.DataSet));
+                case IdleResponseEdit edit:
+                    DataSetManager.ValidateAndExecuteEdit(state.DataSet, edit.Key, edit.Args);
+                    return currentStateResult();
+                default:
+                    throw new ArgumentException("Invalid response!", nameof(response));
+            }
+        }),
+        // Unload DataSet
+        new(isState<DataSetViewStateHolder.UnloadState>, response =>
+        {
             return response switch
             {
-                null => request(new IdleRequest()),
-                IdleResponse idleResponse =>
-                    state(DataSetViewStateHolder.Loaded((StateHolder.CurrentState as DataSetViewStateHolder.LoadedState)!.DataSet, idleResponse.UnloadDataSet)),
+                null => stateResult(DataSetViewStateHolder.Empty()),
                 _ => throw new ArgumentException("Invalid response!", nameof(response))
             };
         })

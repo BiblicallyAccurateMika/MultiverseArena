@@ -10,8 +10,9 @@ public abstract class ProcessManager<TStateHolder>(TStateHolder? initialState = 
     public record ProcessResult(TStateHolder NewState, InteractionRequest? Request = null);
     public record Process(Func<bool> Check, Func<InteractionResponse?, ProcessResult> Action);
     
-    protected ProcessResult request(InteractionRequest request) => new(StateHolder, request);
-    protected ProcessResult state(TStateHolder state) => new(state);
+    protected ProcessResult requestResult(InteractionRequest request) => new(StateHolder, request);
+    protected ProcessResult stateResult(TStateHolder state) => new(state);
+    protected ProcessResult currentStateResult() => new(StateHolder);
     
     protected abstract Process[] Processes { get; }
     private Process? _process;
