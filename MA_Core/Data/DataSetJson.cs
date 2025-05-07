@@ -12,6 +12,14 @@ public class DataSetJson
     public ActionJson[] Actions { get; init; }
     public UnitJson[] Units { get; init; }
 
+    public DataSetJson() { }
+    public DataSetJson(DataSet dataSet)
+    {
+        Name = dataSet.Name;
+        Actions = dataSet.Actions.Select(x => new ActionJson(x)).ToArray();
+        Units = dataSet.Units.Select(x => new UnitJson(x)).ToArray();
+    }
+
     #region Innere Klassen
 
     /// <summary>
@@ -23,6 +31,15 @@ public class DataSetJson
         public string Name { get; set; }
         public string Description { get; set; }
         public ActionStepJson[] ActionSteps { get; set; }
+
+        public ActionJson() { }
+        public ActionJson(Action action)
+        {
+            ID = action.ID;
+            Name = action.Name;
+            Description = action.Description;
+            ActionSteps = action.Steps!.Select(x => new ActionStepJson(x)).ToArray();
+        }
 
         public Action AsAction()
         {
@@ -45,6 +62,7 @@ public class DataSetJson
             public bool AllowEmptyFields { get; set; }
             public bool AllowSelf { get; set; }
             public int SelectCount { get; set; }
+            public bool UpToSelectCount { get; set; }
             public Faction TargetFaction { get; set; }
             public Enums.Range TargetRange { get; set; }
             public AttackTypeEnum AttackType { get; set; }
@@ -52,32 +70,81 @@ public class DataSetJson
             public int AttackAccuracy { get; set; }
 
             public enum StepTypeEnum { None, Select, SwapPosition, Attack }
-            public enum SelectTypeEnum { None, Manual, Auto }
+            public enum SelectTypeEnum { None, Manual, Auto, Self }
             public enum AttackTypeEnum { None, Physical, Special }
+
+            public ActionStepJson() { }
+            public ActionStepJson(ActionStep step)
+            {
+                switch (step)
+                {
+                    case ActionStep.Select select:
+                        StepType = StepTypeEnum.Select;
+                        switch (select)
+                        {
+                            case ActionStep.Select.Self:
+                                SelectType = SelectTypeEnum.Self;
+                                break;
+                            case ActionStep.Select.Arbitrary arbitrary:
+                                TargetFaction = arbitrary.Faction;
+                                TargetRange = arbitrary.Range;
+                                AllowSelf = arbitrary.AllowSelf;
+                                switch (arbitrary)
+                                {
+                                    case ActionStep.Select.Arbitrary.Manual manual:
+                                        SelectType = SelectTypeEnum.Manual;
+                                        SelectCount = manual.SelectionCount;
+                                        AllowEmptyFields = manual.EmptyFieldAllowed;
+                                        UpToSelectCount = manual.UpToSelectionCount;
+                                        break;
+                                    case ActionStep.Select.Arbitrary.Automatic:
+                                        SelectType = SelectTypeEnum.Auto;
+                                        break;
+                                }
+                                break;
+                        }
+                        break;
+                    case ActionStep.SwapPosition:
+                        StepType = StepTypeEnum.SwapPosition;
+                        break;
+                    case ActionStep.PhysicalAttack physical:
+                        StepType = StepTypeEnum.Attack;
+                        AttackType = AttackTypeEnum.Physical;
+                        AttackAccuracy = physical.Accuracy;
+                        AttackPower = physical.Power;
+                        break;
+                }
+            }
 
             public ActionStep AsActionStep()
             {
                 switch (StepType)
                 {
-                    //todo: Fill in missing types
                     case StepTypeEnum.Select:
-                        if (SelectType == SelectTypeEnum.Manual)
+                        switch (SelectType)
                         {
-                            //todo: Fill in missing fields
-                            return new ActionStep.Select.Arbitrary.Manual
-                            {
-                                Faction = TargetFaction,
-                                SelectionCount = SelectCount > 0 ? SelectCount : 1
-                            };
-                        }
-                        else
-                        {
-                            return new ActionStep.Select.Arbitrary.Automatic
-                            {
-                                Faction = TargetFaction,
-                                Range = TargetRange,
-                                AllowSelf = AllowSelf
-                            };
+                            case SelectTypeEnum.Manual:
+                                return new ActionStep.Select.Arbitrary.Manual
+                                {
+                                    Faction = TargetFaction,
+                                    SelectionCount = SelectCount > 0 ? SelectCount : 1,
+                                    AllowSelf = AllowSelf,
+                                    EmptyFieldAllowed = AllowEmptyFields,
+                                    Range = TargetRange,
+                                    UpToSelectionCount = UpToSelectCount
+                                };
+                            case SelectTypeEnum.Auto:
+                                return new ActionStep.Select.Arbitrary.Automatic
+                                {
+                                    Faction = TargetFaction,
+                                    Range = TargetRange,
+                                    AllowSelf = AllowSelf
+                                };
+                            case SelectTypeEnum.Self:
+                                return new ActionStep.Select.Self();
+                            case SelectTypeEnum.None:
+                            default:
+                                throw new ArgumentOutOfRangeException();
                         }
                     case StepTypeEnum.SwapPosition: return new ActionStep.SwapPosition();
                     case StepTypeEnum.Attack:
@@ -93,6 +160,7 @@ public class DataSetJson
                         {
                             throw new NotImplementedException();
                         }
+                    case StepTypeEnum.None:
                     default: throw new NotImplementedException();
                 }
             }
@@ -110,6 +178,17 @@ public class DataSetJson
         public UnitLevelJson Level2 { get; set; }
         public UnitLevelJson Level3 { get; set; }
         public UnitLevelJson Level4 { get; set; }
+
+        public UnitJson() { }
+        public UnitJson(Unit unit)
+        {
+            Codename = unit.Codename;
+            Icon = unit.IconPath;
+            Level1 = new UnitLevelJson(unit.Level1);
+            Level2 = new UnitLevelJson(unit.Level2);
+            Level3 = new UnitLevelJson(unit.Level3);
+            Level4 = new UnitLevelJson(unit.Level4);
+        }
 
         public Unit AsUnit(ICollection<Action> actions)
         {
@@ -133,6 +212,26 @@ public class DataSetJson
             public string Sprite { get; set; }
             public UnitLevelJson_Stats Stats { get; set; }
             public string[] Actions { get; set; } // Array with the IDs of the Actions this Unit knows
+
+            public UnitLevelJson() { }
+            public UnitLevelJson(Unit.Level level)
+            {
+                Name = level.Name;
+                Sprite = level.SpritePath;
+                Stats = new UnitLevelJson_Stats
+                {
+                    HP = level.HP,
+                    Strength = level.Strength,
+                    Toughness = level.Toughness,
+                    Precision = level.Precision,
+                    Agility = level.Agility,
+                    Power = level.Power,
+                    Defense = level.Defense,
+                    Aura = level.Aura,
+                    Willpower = level.Willpower
+                };
+                Actions = level.Actions.Select(x => x.ID).ToArray();
+            }
 
             public Unit.Level AsLevel(ICollection<Action> actions)
             {

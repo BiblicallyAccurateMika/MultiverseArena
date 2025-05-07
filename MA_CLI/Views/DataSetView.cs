@@ -41,7 +41,8 @@ public class DataSetView(View parent) : View<DataSetViewProcessManager, DataSetV
                             
                             var editArgs = edit.Split(' ');
                             return response(new IdleResponseEdit(editArgs[0], editArgs[1..]));
-                        }, command => !String.IsNullOrWhiteSpace(command) && (command.StartsWith("e ") || command.StartsWith("edit ")))
+                        }, command => !String.IsNullOrWhiteSpace(command) && (command.StartsWith("e ") || command.StartsWith("edit "))),
+                        new Interaction("s", "Save", _ => response(new IdleResponseSave()))
                     ];
                 default: return null!;
             }

@@ -53,8 +53,8 @@ public class DataSet
         if (path.StartsWith('"') && path.EndsWith('"')) path = path[1..^1]; // Removes quotation marks
         if (!File.Exists(path)) throw new FileNotFoundException("File not found", path);
         if (!path.EndsWith(DatasetFileEnding)) throw new ArgumentException("Invalid file ending");
-        
-        var zip = ZipFile.OpenRead(path);
+
+        using var zip = ZipFile.OpenRead(path);
         if (!zip.Entries.Any(x => x.Name.Equals(DatasetJsonFileName)))
             throw new FileNotFoundException($"Dataset does not contain '{DatasetJsonFileName}'", path);
         
@@ -92,6 +92,37 @@ public class DataSet
         if (!Directory.Exists(folderPath)) throw new DirectoryNotFoundException($"Directory not found: {folderPath}");
         var files = Directory.GetFiles(folderPath);
         return files.Where(x => x.EndsWith(DatasetFileEnding)).ToArray();
+    }
+
+    public void Save()
+    {
+        try
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(Path, nameof(Path));
+
+            var temp = Directory.CreateTempSubdirectory("multiverseArena_");
+            var tempFolder = temp.CreateSubdirectory("dataset").FullName;
+
+            // Write Json
+            var dsJson = new DataSetJson(this);
+            var dsJsonStr = JsonSerializer.Serialize(dsJson);
+            var tmpPath = System.IO.Path.Join(tempFolder, DatasetJsonFileName);
+            File.WriteAllText(tmpPath, dsJsonStr);
+
+            // Prepare Images
+
+            // Bind Zip
+            var archiveFileName = System.IO.Path.Join(temp.FullName, "final.zip");
+            ZipFile.CreateFromDirectory(tempFolder, archiveFileName);
+            File.Move(archiveFileName, Path, true);
+            
+            // Cleanup Temp Folder
+            temp.Delete(true);
+        }
+        catch (Exception e)
+        {
+            throw new Exception($"Failed to save DataSet: {e.Message}", e);
+        }
     }
 
     #endregion

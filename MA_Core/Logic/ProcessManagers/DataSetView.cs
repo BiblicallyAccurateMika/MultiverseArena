@@ -40,6 +40,7 @@ public record SelectDataSetResponse(string Path) : InteractionResponse;
 public record IdleRequest : InteractionRequest;
 public record IdleResponseUnload : InteractionResponse;
 public record IdleResponseEdit(string Key, params string[] Args) : InteractionResponse;
+public record IdleResponseSave : InteractionResponse;
 
 #endregion
 
@@ -88,6 +89,16 @@ public class DataSetViewProcessManager : ProcessManager<DataSetViewStateHolder>
                     return stateResult(DataSetViewStateHolder.Unload(state.DataSet));
                 case IdleResponseEdit edit:
                     DataSetManager.ValidateAndExecuteEdit(state.DataSet, edit.Key, edit.Args);
+                    return currentStateResult();
+                case IdleResponseSave:
+                    try
+                    {
+                        state.DataSet.Save();
+                    }
+                    catch (ArgumentException e) when (e.ParamName == nameof(state.DataSet.Path))
+                    {
+                        throw new Exception("Please provide a valid path.", e);
+                    }
                     return currentStateResult();
                 default:
                     throw new ArgumentException("Invalid response!", nameof(response));
