@@ -58,6 +58,8 @@ public class DataSet
         if (!zip.Entries.Any(x => x.Name.Equals(DatasetJsonFileName)))
             throw new FileNotFoundException($"Dataset does not contain '{DatasetJsonFileName}'", path);
         
+        //todo: unpack all files to temporary folder
+        
         Path = path;
         
         var file = zip.Entries.First(x => x.Name.Equals(DatasetJsonFileName));
