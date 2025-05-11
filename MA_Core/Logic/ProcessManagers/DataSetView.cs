@@ -20,7 +20,6 @@ public record DataSetViewStateHolder : StateHolder
     public record EmptyState : BaseState;
     public static DataSetViewStateHolder Empty() => new(new EmptyState()); 
     
-    // todo: if there is more than one eligible process, return a request that ask which process should be run (bonus points if this behaviour can be configured)
     public record LoadedState(DataSet DataSet) : BaseState;
     public static DataSetViewStateHolder Loaded(DataSet dataSet) => new(new LoadedState(dataSet));
     
