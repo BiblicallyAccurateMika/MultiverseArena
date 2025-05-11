@@ -88,7 +88,7 @@ public class DataSetViewProcessManager : ProcessManager<DataSetViewStateHolder>
                 case IdleResponseUnload:
                     return stateResult(DataSetViewStateHolder.Unload(state.DataSet));
                 case IdleResponseEdit edit:
-                    DataSetManager.ValidateAndExecuteEdit(state.DataSet, edit.Key, edit.Args);
+                    DataSetManager.ExecuteEdit(state.DataSet, edit.Key, edit.Args);
                     return currentStateResult();
                 case IdleResponseSave:
                     try

@@ -4,37 +4,41 @@ namespace MA_Core.Logic.Managers;
 
 public static class DataSetManager
 {
-    public static bool ValidateEdit(DataSet dataSet, string key, string[] args)
+    private static void validateEdit(DataSet dataSet, string key, string[] args)
     {
         ArgumentNullException.ThrowIfNull(dataSet);
         ArgumentException.ThrowIfNullOrWhiteSpace(key);
         ArgumentNullException.ThrowIfNull(args);
 
-        if (key.Equals("name") && args.Length == 1)
+        switch (key)
         {
-            return true;
-        }
-        else if (key.StartsWith("actions."))
-        {
-            
-        }
-        else if (key.StartsWith("units."))
-        {
-            
+            case "name":
+                if (args.Length != 1) throw new ArgumentException("Invalid argument count");
+                break;
+            case "path":
+                if (args.Length != 1) throw new ArgumentException("Invalid argument count");
+                var dir = Path.GetDirectoryName(args[0]);
+                if (!Directory.Exists(dir)) throw new DirectoryNotFoundException();
+                break;
+            default:
+                throw new ArgumentException("Unknown key");
         }
 
         throw new ArgumentException("Unknown key");
     }
 
-    public static bool ExecuteEdit(DataSet dataSet, string key, string[] args)
+    public static void ExecuteEdit(DataSet dataSet, string key, string[] args)
     {
-        if (key.Equals("name")) dataSet.Name = args[0];
+        validateEdit(dataSet, key, args);
         
-        return false;
-    }
-
-    public static bool ValidateAndExecuteEdit(DataSet dataSet, string key, string[] args)
-    {
-        return ValidateEdit(dataSet, key, args) && ExecuteEdit(dataSet, key, args);
+        switch (key)
+        {
+            case "name":
+                dataSet.Name = args[0];
+                break;
+            case "path":
+                dataSet.Path = args[0];
+                break;
+        }
     }
 }
