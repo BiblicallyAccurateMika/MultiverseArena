@@ -1,6 +1,7 @@
 ﻿using System.IO.Compression;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
+using MA_Core.Util;
 
 [assembly: InternalsVisibleTo("MA_Test")]
 
@@ -9,25 +10,29 @@ namespace MA_Core.Data;
 /// <summary>
 /// A DataSet holds some <see cref="Action"/> and <see cref="Unit"/> data that can be edited and used for a battle
 /// </summary>
-public class DataSet
+public sealed class DataSet : IDisposable
 {
     #region Properties
 
     #region constants
 
-    public const string DatasetFileEnding = ".dataset";
+    private const string DatasetFileEnding = ".dataset";
     private const string DatasetJsonFileName = "DataSet.json";
 
     #endregion
 
     #region public
     
-    /// Path for saving the dataset
-    public string Path { get; private set; } = String.Empty;
-
+    public string Path { get; set; } = String.Empty;
     public string Name { get; set; } = String.Empty;
-    public List<Action> Actions { get; private set; } = [];
-    public List<Unit> Units { get; private set; } = [];
+    public List<Action> Actions { get; } = [];
+    public List<Unit> Units { get; } = [];
+
+    #endregion
+
+    #region private
+
+    private DirectoryInfo? UnpackedDirectory { get; set; }
 
     #endregion
 
@@ -36,7 +41,7 @@ public class DataSet
     #region Init
 
     /// <summary>
-    /// Creates a empty Dataset
+    /// Creates an empty Dataset
     /// </summary>
     private DataSet()
     {
@@ -58,9 +63,8 @@ public class DataSet
         if (!zip.Entries.Any(x => x.Name.Equals(DatasetJsonFileName)))
             throw new FileNotFoundException($"Dataset does not contain '{DatasetJsonFileName}'", path);
         
-        //todo: unpack all files to temporary folder
-        
         Path = path;
+        UnpackedDirectory = TempDir.GetNewTempDir("dataset");
         
         var file = zip.Entries.First(x => x.Name.Equals(DatasetJsonFileName));
 
@@ -70,6 +74,8 @@ public class DataSet
         if (datasetData == null) throw new JsonException("File does not contain dataset data");
         
         applyJsonConfig(datasetData);
+        
+        zip.ExtractToDirectory(UnpackedDirectory.FullName);
     }
     
     internal static DataSet Test_Factory(DataSetJson datasetData)
@@ -81,8 +87,17 @@ public class DataSet
     private void applyJsonConfig(DataSetJson datasetData)
     {
         Name = datasetData.Name;
-        Actions = datasetData.Actions.Select(x => x.AsAction()).ToList();
-        Units = datasetData.Units.Select(x => x.AsUnit(Actions)).ToList();
+        
+        Actions.Clear();
+        Actions.AddRange(datasetData.Actions.Select(x => x.AsAction()).ToList());
+        
+        Units.Clear();
+        Units.AddRange(datasetData.Units.Select(x => x.AsUnit(Actions)).ToList());
+    }
+    
+    public void Dispose()
+    {
+        UnpackedDirectory!.Delete(true);
     }
 
     #endregion
@@ -102,24 +117,26 @@ public class DataSet
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(Path, nameof(Path));
 
-            var temp = Directory.CreateTempSubdirectory("multiverseArena_");
-            var tempFolder = temp.CreateSubdirectory("dataset").FullName;
+            var archiveFolder = TempDir.GetNewTempDir($"save_ds_{Name}");
+            var resultFolder = TempDir.GetNewTempDir($"save_ds_archive_{Name}");
 
             // Write Json
             var dsJson = new DataSetJson(this);
             var dsJsonStr = JsonSerializer.Serialize(dsJson);
-            var tmpPath = System.IO.Path.Join(tempFolder, DatasetJsonFileName);
+            var tmpPath = System.IO.Path.Join(archiveFolder.FullName, DatasetJsonFileName);
             File.WriteAllText(tmpPath, dsJsonStr);
 
+            //todo
             // Prepare Images
-
+            
             // Bind Zip
-            var archiveFileName = System.IO.Path.Join(temp.FullName, "final.zip");
-            ZipFile.CreateFromDirectory(tempFolder, archiveFileName);
+            var archiveFileName = System.IO.Path.Join(resultFolder.FullName, "final.zip");
+            ZipFile.CreateFromDirectory(archiveFolder.FullName, archiveFileName);
             File.Move(archiveFileName, Path, true);
             
             // Cleanup Temp Folder
-            temp.Delete(true);
+            archiveFolder.Delete(true);
+            resultFolder.Delete(true);
         }
         catch (Exception e)
         {

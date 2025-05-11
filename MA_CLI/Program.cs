@@ -1,6 +1,9 @@
 ﻿using Ma_CLI;
 using Ma_CLI.Views;
 using MA_Core.Abstract;
+using MA_Core.Util;
+
+TempDir.CleanTempDirs();
 
 View view = new MainView();
 InteractionResponse? response = null;
