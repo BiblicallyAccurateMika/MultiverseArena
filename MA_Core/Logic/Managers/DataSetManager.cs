@@ -23,8 +23,6 @@ public static class DataSetManager
             default:
                 throw new ArgumentException("Unknown key");
         }
-
-        throw new ArgumentException("Unknown key");
     }
 
     public static void ExecuteEdit(DataSet dataSet, string key, string[] args)

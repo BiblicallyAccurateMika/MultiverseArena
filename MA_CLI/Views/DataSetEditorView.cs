@@ -2,33 +2,33 @@
 using Ma_CLI.Util;
 using MA_Core.Data;
 using MA_Core.Data.Enums;
-using MA_Core.Logic.ProcessManagers;
+using MA_Core.Logic.StateMachines;
 using Action = MA_Core.Data.Action;
 using Range = MA_Core.Data.Enums.Range;
 
 namespace Ma_CLI.Views;
 
-public class DataSetView(View parent) : View<DataSetViewProcessManager, DataSetViewStateHolder>(parent)
+public class DataSetEditorView(View parent) : View<DataSetEditorStateMachine, DataSetEditorStateHolder>(parent)
 {
-    protected override string ViewName => "DataSet Viewer";
+    protected override string ViewName => "DataSet Editor";
     protected override Interaction[] Interactions
     {
         get
         {
-            switch (ProcessManager.Request)
+            switch (StateMachine.Request)
             {
                 case SelectDataSetRequest:
                     return
                     [
-                        new Interaction("ID", "View Dataset",
+                        new Interaction("ID", "Edit Dataset",
                             idStr => response(new SelectDataSetResponse(DataSets[Int32.Parse(idStr) - 1])),
                             idStr => Int32.TryParse(idStr, out var id) && id > 0 && id <= DataSets.Length),
-                        new Interaction("Path", "View Dataset (by path)",
+                        new Interaction("Path", "Edit Dataset (by path)",
                             path => response(new SelectDataSetResponse(path)),
                             path => !String.IsNullOrWhiteSpace(path))
                     ];
                 case IdleRequest:
-                    var data = (ProcessManager.StateHolder.CurrentState as DataSetViewStateHolder.LoadedState)!.DataSet;
+                    var data = (StateMachine.StateHolder.CurrentState as DataSetEditorStateHolder.LoadedState)!.DataSet;
                     return
                     [
                         new Interaction("1", "View Actions", _ => view(new ActionsView(this, data))),
@@ -51,18 +51,18 @@ public class DataSetView(View parent) : View<DataSetViewProcessManager, DataSetV
 
     protected override InteractionResult exit()
     {
-        switch (ProcessManager.StateHolder.CurrentState)
+        switch (StateMachine.StateHolder.CurrentState)
         {
-            case DataSetViewStateHolder.LoadedState: return response(new IdleResponseUnload());
+            case DataSetEditorStateHolder.LoadedState: return response(new IdleResponseUnload());
             default: return base.exit();
         }
     }
 
     protected override void render(StringBuilder builder)
     {
-        switch (ProcessManager.StateHolder.CurrentState)
+        switch (StateMachine.StateHolder.CurrentState)
         {
-            case DataSetViewStateHolder.EmptyState:
+            case DataSetEditorStateHolder.EmptyState:
                 for (var i = 0; i < DataSets.Length; i++)
                 {
                     var dataSet = DataSets[i];
@@ -70,7 +70,7 @@ public class DataSetView(View parent) : View<DataSetViewProcessManager, DataSetV
                     builder.AppendLine($"{i + 1} - {Path.GetFileName(dataSet)}");
                 }
                 break;
-            case DataSetViewStateHolder.LoadedState loaded:
+            case DataSetEditorStateHolder.LoadedState loaded:
                 builder.AppendLine($"Path: {loaded.DataSet.Path}");
                 builder.AppendLine($"Name: {loaded.DataSet.Name}");
                 builder.AppendLine($"Actions: {loaded.DataSet.Actions.Count}");

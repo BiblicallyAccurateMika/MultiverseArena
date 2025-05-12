@@ -30,7 +30,7 @@ public abstract class View(View? parent)
     protected virtual InteractionResult exit() => InteractionResult.View(Parent!);
 
     protected virtual string Breadcrumbs => Parent == null ? ViewName : $"{Parent.Breadcrumbs} > {ViewName}";
-    protected View? Parent { get; } = parent;
+    private View? Parent { get; } = parent;
 
     private IEnumerable<Interaction> AllInteractions
     {
@@ -72,14 +72,14 @@ public abstract class View(View? parent)
     public virtual void Process(InteractionResponse? response = null) { }
 }
 
-public abstract class View<TProcessManager, TState>(View? parent) : View(parent)
-    where TProcessManager : ProcessManager<TState>, new()
+public abstract class View<TStateMachine, TState>(View? parent) : View(parent)
+    where TStateMachine : StateMachine<TState>, new()
     where TState : StateHolder, new()
 {
-    protected TProcessManager ProcessManager { get; } = new();
+    protected TStateMachine StateMachine { get; } = new();
 
     public override void Process(InteractionResponse? response = null)
     {
-        ProcessManager.Run(response);
+        StateMachine.Run(response);
     }
 }

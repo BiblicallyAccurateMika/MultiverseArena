@@ -2,14 +2,14 @@
 using MA_Core.Data;
 using MA_Core.Logic.Managers;
 
-namespace MA_Core.Logic.ProcessManagers;
+namespace MA_Core.Logic.StateMachines;
 
 #region Stateholder
 
-public record DataSetViewStateHolder : StateHolder
+public record DataSetEditorStateHolder : StateHolder
 {
-    public DataSetViewStateHolder() : this(CurrentState: null) { }
-    private DataSetViewStateHolder(BaseState? CurrentState = null)
+    public DataSetEditorStateHolder() : this(CurrentState: null) { }
+    private DataSetEditorStateHolder(BaseState? CurrentState = null)
     {
         CurrentState ??= new EmptyState();
         this.CurrentState = CurrentState;
@@ -18,13 +18,13 @@ public record DataSetViewStateHolder : StateHolder
     public abstract record BaseState;
     
     public record EmptyState : BaseState;
-    public static DataSetViewStateHolder Empty() => new(new EmptyState()); 
+    public static DataSetEditorStateHolder Empty() => new(new EmptyState()); 
     
     public record LoadedState(DataSet DataSet) : BaseState;
-    public static DataSetViewStateHolder Loaded(DataSet dataSet) => new(new LoadedState(dataSet));
+    public static DataSetEditorStateHolder Loaded(DataSet dataSet) => new(new LoadedState(dataSet));
     
     public record UnloadState(DataSet DataSet) : BaseState;
-    public static DataSetViewStateHolder Unload(DataSet dataSet) => new(new UnloadState(dataSet));
+    public static DataSetEditorStateHolder Unload(DataSet dataSet) => new(new UnloadState(dataSet));
     
     public BaseState CurrentState { get; }
 }
@@ -43,9 +43,9 @@ public record IdleResponseSave : InteractionResponse;
 
 #endregion
 
-#region ProcessManager
+#region StateMachine
 
-public class DataSetViewProcessManager : ProcessManager<DataSetViewStateHolder>
+public class DataSetEditorStateMachine : StateMachine<DataSetEditorStateHolder>
 {
     /// Base method, tests whether the object has the given type and returns the cast object
     private bool isState<TState>(out TState state)
@@ -64,28 +64,28 @@ public class DataSetViewProcessManager : ProcessManager<DataSetViewStateHolder>
     /// Runs the type check and an additional check on the object
     private Func<bool> isState<TState>(Func<TState, bool> additionalCheck) => () => isState<TState>(out var state) && additionalCheck(state);
 
-    protected override Process[] Processes =>
+    protected override Transition[] Transitions =>
     [
         // Load DataSet
-        new (isState<DataSetViewStateHolder.EmptyState>, response =>
+        new (isState<DataSetEditorStateHolder.EmptyState>, response =>
         {
             return response switch
             {
                 null => requestResult(new SelectDataSetRequest()),
-                SelectDataSetResponse selectResponse => stateResult(DataSetViewStateHolder.Loaded(new DataSet(selectResponse.Path))),
+                SelectDataSetResponse selectResponse => stateResult(DataSetEditorStateHolder.Loaded(new DataSet(selectResponse.Path))),
                 _ => throw new ArgumentException("Invalid response!", nameof(response))
             };
         }),
         // Idle
-        new(isState<DataSetViewStateHolder.LoadedState>, response =>
+        new(isState<DataSetEditorStateHolder.LoadedState>, response =>
         {
-            var state = (StateHolder.CurrentState as DataSetViewStateHolder.LoadedState)!;
+            var state = (StateHolder.CurrentState as DataSetEditorStateHolder.LoadedState)!;
             switch (response)
             {
                 case null:
                     return requestResult(new IdleRequest());
                 case IdleResponseUnload:
-                    return stateResult(DataSetViewStateHolder.Unload(state.DataSet));
+                    return stateResult(DataSetEditorStateHolder.Unload(state.DataSet));
                 case IdleResponseEdit edit:
                     DataSetManager.ExecuteEdit(state.DataSet, edit.Key, edit.Args);
                     return currentStateResult();
@@ -104,11 +104,11 @@ public class DataSetViewProcessManager : ProcessManager<DataSetViewStateHolder>
             }
         }),
         // Unload DataSet
-        new(isState<DataSetViewStateHolder.UnloadState>, response =>
+        new(isState<DataSetEditorStateHolder.UnloadState>, response =>
         {
             return response switch
             {
-                null => stateResult(DataSetViewStateHolder.Empty()),
+                null => stateResult(DataSetEditorStateHolder.Empty()),
                 _ => throw new ArgumentException("Invalid response!", nameof(response))
             };
         })
