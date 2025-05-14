@@ -1,6 +1,7 @@
 ﻿using MA_Core.Abstract;
 using MA_Core.Data;
 using MA_Core.Logic.Managers;
+using MA_Core.Util;
 
 namespace MA_Core.Logic.StateMachines;
 
@@ -22,6 +23,7 @@ public record DataSetEditorStateHolder : StateHolder
     
     public record LoadedState(DataSet DataSet) : BaseState;
     public static DataSetEditorStateHolder Loaded(DataSet dataSet) => new(new LoadedState(dataSet));
+    public LoadedState AsLoaded() => (CurrentState as LoadedState)!;
     
     public record UnloadState(DataSet DataSet) : BaseState;
     public static DataSetEditorStateHolder Unload(DataSet dataSet) => new(new UnloadState(dataSet));
@@ -47,72 +49,53 @@ public record IdleResponseSave : InteractionResponse;
 
 public class DataSetEditorStateMachine : StateMachine<DataSetEditorStateHolder>
 {
-    /// Base method, tests whether the object has the given type and returns the cast object
-    private bool isState<TState>(out TState state)
+    public DataSetEditorStateMachine()
     {
-        if (StateHolder.CurrentState is TState baseState)
-        {
-            state = baseState;
-            return true;
-        }
-
-        state = default!;
-        return false;
+        Transitions = [loadDataSet(), idle(), unload()];
     }
-    /// Only the check, without the cast
-    private bool isState<TState>() => isState<TState>(out _);
-    /// Runs the type check and an additional check on the object
-    private Func<bool> isState<TState>(Func<TState, bool> additionalCheck) => () => isState<TState>(out var state) && additionalCheck(state);
 
-    protected override Transition[] Transitions =>
-    [
-        // Load DataSet
-        new (isState<DataSetEditorStateHolder.EmptyState>, response =>
-        {
-            return response switch
+    private static Transition loadDataSet()
+    {
+        return buildTransition()
+            .Condition(state => state.CurrentState is DataSetEditorStateHolder.EmptyState)
+            .InitialAction((_, _) => requestResult(new SelectDataSetRequest()))
+            .Action<SelectDataSetResponse>((_, selectResponse) => stateResult(DataSetEditorStateHolder.Loaded(new DataSet(selectResponse.Path))))
+            .Build();
+    }
+
+    private static Transition idle()
+    {
+        return buildTransition()
+            .Condition(state => state.CurrentState is DataSetEditorStateHolder.LoadedState)
+            .InitialAction((_, _) => requestResult(new IdleRequest()))
+            .Action<IdleResponseUnload>((state, _) => stateResult(DataSetEditorStateHolder.Unload(state.AsLoaded().DataSet)))
+            .Action<IdleResponseEdit>((state, edit) =>
             {
-                null => requestResult(new SelectDataSetRequest()),
-                SelectDataSetResponse selectResponse => stateResult(DataSetEditorStateHolder.Loaded(new DataSet(selectResponse.Path))),
-                _ => throw new ArgumentException("Invalid response!", nameof(response))
-            };
-        }),
-        // Idle
-        new(isState<DataSetEditorStateHolder.LoadedState>, response =>
-        {
-            var state = (StateHolder.CurrentState as DataSetEditorStateHolder.LoadedState)!;
-            switch (response)
+                DataSetManager.ExecuteEdit(state.AsLoaded().DataSet, edit.Key, edit.Args);
+                return stateResult(state);
+            })
+            .Action<IdleResponseSave>((state, _) =>
             {
-                case null:
-                    return requestResult(new IdleRequest());
-                case IdleResponseUnload:
-                    return stateResult(DataSetEditorStateHolder.Unload(state.DataSet));
-                case IdleResponseEdit edit:
-                    DataSetManager.ExecuteEdit(state.DataSet, edit.Key, edit.Args);
-                    return currentStateResult();
-                case IdleResponseSave:
-                    try
-                    {
-                        state.DataSet.Save();
-                    }
-                    catch (ArgumentException e) when (e.ParamName == nameof(state.DataSet.Path))
-                    {
-                        throw new Exception("Please provide a valid path.", e);
-                    }
-                    return currentStateResult();
-                default:
-                    throw new ArgumentException("Invalid response!", nameof(response));
-            }
-        }),
-        // Unload DataSet
-        new(isState<DataSetEditorStateHolder.UnloadState>, response =>
-        {
-            return response switch
-            {
-                null => stateResult(DataSetEditorStateHolder.Empty()),
-                _ => throw new ArgumentException("Invalid response!", nameof(response))
-            };
-        })
-    ];
+                try
+                {
+                    state.AsLoaded().DataSet.Save();
+                }
+                catch (ArgumentException e) when (e.ParamName == nameof(DataSetEditorStateHolder.LoadedState.DataSet.Path))
+                {
+                    throw new Exception("Please provide a valid path.", e);
+                }
+                return stateResult(state);
+            })
+            .Build();
+    }
+
+    private static Transition unload()
+    {
+        return buildTransition()
+            .Condition(state => state.CurrentState is DataSetEditorStateHolder.UnloadState)
+            .InitialAction((_, _) => stateResult(DataSetEditorStateHolder.Empty()))
+            .Build();
+    }
 }
 
 #endregion

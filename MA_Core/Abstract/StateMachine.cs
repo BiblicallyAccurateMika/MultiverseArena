@@ -1,4 +1,6 @@
-﻿namespace MA_Core.Abstract;
+﻿using MA_Core.Util;
+
+namespace MA_Core.Abstract;
 
 public abstract record StateHolder;
 public abstract record InteractionRequest;
@@ -7,14 +9,13 @@ public abstract record InteractionResponse;
 public abstract class StateMachine<TStateHolder>(TStateHolder? initialState = null)
     where TStateHolder : StateHolder, new()
 {
-    protected record TransitionResult(TStateHolder NewState, InteractionRequest? Request = null);
-    protected record Transition(Func<bool> Check, Func<InteractionResponse?, TransitionResult> Action);
+    public record TransitionResult(TStateHolder? NewState, InteractionRequest? Request = null);
     
-    protected TransitionResult requestResult(InteractionRequest request) => new(StateHolder, request);
-    protected TransitionResult stateResult(TStateHolder state) => new(state);
-    protected TransitionResult currentStateResult() => new(StateHolder);
+    public delegate bool TransitionCondition(TStateHolder state);
+    public delegate TransitionResult TransitionAction(TStateHolder state, InteractionResponse? response = null);
+    public record Transition(TransitionCondition Condition, TransitionAction Action);
     
-    protected abstract Transition[] Transitions { get; }
+    protected Transition[] Transitions { get; init; } = [];
     private Transition? _transition;
     
     public TStateHolder StateHolder { get; private set; } = initialState ?? new TStateHolder();
@@ -26,18 +27,23 @@ public abstract class StateMachine<TStateHolder>(TStateHolder? initialState = nu
         {
             if (_transition == null)
             {
-                _transition = Transitions.FirstOrDefault(p => p.Check());
+                _transition = Transitions.FirstOrDefault(p => p.Condition(StateHolder));
                 if (_transition == null) return; // No processes can be done, i.e. final state
             }
 
-            var result = _transition.Action(response);
-            StateHolder = result.NewState;
+            var result = _transition.Action(StateHolder, response);
+            if (result.NewState != null) StateHolder = result.NewState;
             Request = result.Request;
 
-            if (result.Request is not null) return; // Needs interaction
+            if (result.Request != null) return; // Needs interaction
             _transition = null;
             
             response = null;
         }
     }
+    
+    protected static TransitionResult requestResult(InteractionRequest request) => new(null, request);
+    protected static TransitionResult stateResult(TStateHolder state) => new(state);
+
+    protected static TransitionBuilder<TStateHolder> buildTransition() => TransitionBuilder<TStateHolder>.Create();
 }
