@@ -9,7 +9,9 @@ public abstract record InteractionResponse;
 public abstract class StateMachine<TStateHolder>(TStateHolder? initialState = null)
     where TStateHolder : StateHolder, new()
 {
-    public record TransitionResult(TStateHolder? NewState, InteractionRequest? Request = null);
+    public abstract record TransitionResult;
+    public record TransitionResultRequest(InteractionRequest InteractionRequest) : TransitionResult;
+    public record TransitionResultState(TStateHolder StateHolder) : TransitionResult;
     
     public delegate bool TransitionCondition(TStateHolder state);
     public delegate TransitionResult TransitionAction(TStateHolder state, InteractionResponse? response = null);
@@ -32,18 +34,27 @@ public abstract class StateMachine<TStateHolder>(TStateHolder? initialState = nu
             }
 
             var result = _transition.Action(StateHolder, response);
-            if (result.NewState != null) StateHolder = result.NewState;
-            Request = result.Request;
 
-            if (result.Request != null) return; // Needs interaction
+            Request = null;
+            switch (result)
+            {
+                case TransitionResultRequest resultRequest:
+                    Request = resultRequest.InteractionRequest;
+                    break;
+                case TransitionResultState resultState:
+                    StateHolder = resultState.StateHolder;
+                    break;
+            }
+
+            if (Request != null) return; // Needs interaction
             _transition = null;
             
             response = null;
         }
     }
     
-    protected static TransitionResult requestResult(InteractionRequest request) => new(null, request);
-    protected static TransitionResult stateResult(TStateHolder state) => new(state);
+    protected static TransitionResultRequest requestResult(InteractionRequest request) => new(request);
+    protected static TransitionResultState stateResult(TStateHolder state) => new(state);
 
     protected static TransitionBuilder<TStateHolder> buildTransition() => TransitionBuilder<TStateHolder>.Create();
 }
