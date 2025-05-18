@@ -15,7 +15,7 @@ public abstract class StateMachine<TStateHolder>(TStateHolder? initialState = nu
     
     public delegate bool TransitionCondition(TStateHolder state);
     public delegate TransitionResult TransitionAction(TStateHolder state, InteractionResponse? response = null);
-    public record Transition(TransitionCondition Condition, TransitionAction Action);
+    public record Transition(string Name, TransitionCondition Condition, TransitionAction Action);
     
     protected Transition[] Transitions { get; init; } = [];
     private Transition? _transition;
@@ -56,5 +56,5 @@ public abstract class StateMachine<TStateHolder>(TStateHolder? initialState = nu
     protected static TransitionResultRequest requestResult(InteractionRequest request) => new(request);
     protected static TransitionResultState stateResult(TStateHolder state) => new(state);
 
-    protected static TransitionBuilder<TStateHolder> buildTransition() => TransitionBuilder<TStateHolder>.Create();
+    protected static TransitionBuilder<TStateHolder> buildTransition(string name) => TransitionBuilder<TStateHolder>.Create(name);
 }

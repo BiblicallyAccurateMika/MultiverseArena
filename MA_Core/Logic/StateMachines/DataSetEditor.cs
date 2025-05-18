@@ -56,7 +56,7 @@ public class DataSetEditorStateMachine : StateMachine<DataSetEditorStateHolder>
 
     private static Transition loadDataSet()
     {
-        return buildTransition()
+        return buildTransition("LoadDataSet")
             .Condition(state => state.CurrentState is DataSetEditorStateHolder.EmptyState)
             .InitialAction((_, _) => requestResult(new SelectDataSetRequest()))
             .Action<SelectDataSetResponse>((_, selectResponse) => stateResult(DataSetEditorStateHolder.Loaded(new DataSet(selectResponse.Path))))
@@ -65,7 +65,7 @@ public class DataSetEditorStateMachine : StateMachine<DataSetEditorStateHolder>
 
     private static Transition idle()
     {
-        return buildTransition()
+        return buildTransition("Idle")
             .Condition(state => state.CurrentState is DataSetEditorStateHolder.LoadedState)
             .InitialAction((_, _) => requestResult(new IdleRequest()))
             .Action<IdleResponseUnload>((state, _) => stateResult(DataSetEditorStateHolder.Unload(state.AsLoaded().DataSet)))
@@ -91,7 +91,7 @@ public class DataSetEditorStateMachine : StateMachine<DataSetEditorStateHolder>
 
     private static Transition unload()
     {
-        return buildTransition()
+        return buildTransition("Unload")
             .Condition(state => state.CurrentState is DataSetEditorStateHolder.UnloadState)
             .InitialAction((_, _) => stateResult(DataSetEditorStateHolder.Empty()))
             .Build();

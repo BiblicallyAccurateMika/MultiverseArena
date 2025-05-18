@@ -4,33 +4,46 @@ namespace MA_Core.Util;
 
 public class TransitionBuilder<TStateHolder> where TStateHolder : StateHolder, new()
 {
+    #region Properties
+
+    public string TransitionName { get; init; }
+
+    #endregion
+
     #region Initialization
 
-    private TransitionBuilder() { }
+    private TransitionBuilder(string transitionName)
+    { 
+        TransitionName = transitionName;
+    }
 
-    public static TransitionBuilder<TStateHolder> Create() => new();
+    public static TransitionBuilder<TStateHolder> Create(string transitionName) => new(transitionName);
 
     public StateMachine<TStateHolder>.Transition Build()
     {
-        return new StateMachine<TStateHolder>.Transition(state => _conditions.All(x => x(state)), (state, response) =>
-        {
-            if (response == null)
+        return new StateMachine<TStateHolder>.Transition(
+            TransitionName,
+            state => _conditions.All(x => x(state)),
+            (state, response) =>
             {
-                if (_initialAction != null)
+                if (response == null)
                 {
-                    return _initialAction(state);
+                    if (_initialAction != null)
+                    {
+                        return _initialAction(state);
+                    }
                 }
-            }
-            else
-            {
-                var type = response.GetType();
-                if (_actions.TryGetValue(type, out var action))
+                else
                 {
-                    return action(state, response);
+                    var type = response.GetType();
+                    if (_actions.TryGetValue(type, out var action))
+                    {
+                        return action(state, response);
+                    }
                 }
+                throw new ArgumentException("Invalid response!", nameof(response));
             }
-            throw new ArgumentException("Invalid response!", nameof(response));
-        });
+        );
     }
 
     #endregion
