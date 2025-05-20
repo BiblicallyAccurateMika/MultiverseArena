@@ -43,6 +43,10 @@ public record IdleResponseUnload : InteractionResponse;
 public record IdleResponseEdit(string Key, params string[] Args) : InteractionResponse;
 public record IdleResponseSave : InteractionResponse;
 
+public class FileExistsException : Exception;
+public record OverwriteRequest : InteractionRequest;
+public record OverwriteResponse(bool Overwrite) : InteractionResponse;
+
 #endregion
 
 #region StateMachine
@@ -84,6 +88,15 @@ public class DataSetEditorStateMachine : StateMachine<DataSetEditorStateHolder>
                 {
                     throw new Exception("Please provide a valid path.", e);
                 }
+                catch (FileExistsException e)
+                {
+                    return requestResult(new OverwriteRequest());
+                }
+                return stateResult(state);
+            })
+            .Action<OverwriteResponse>((state, response) =>
+            {
+                if (response.Overwrite) state.AsLoaded().DataSet.Save(true);
                 return stateResult(state);
             })
             .Build();

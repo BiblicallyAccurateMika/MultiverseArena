@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using MA_Core.Abstract;
+using MA_Core.Util;
 
 namespace Ma_CLI;
 
@@ -36,8 +37,9 @@ public abstract class View(View? parent)
     {
         get
         {
-            List<Interaction> interactions = [new("0", "Exit", _ => exit())];
+            List<Interaction> interactions = [];
             if (Interactions != null) interactions.AddRange(Interactions);
+            if (interactions.None(x => x.Key == "0")) interactions.Insert(0, new Interaction("0", "Exit", _ => exit()));
             return interactions;
         }
     }

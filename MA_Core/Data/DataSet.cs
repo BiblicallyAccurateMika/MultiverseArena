@@ -1,6 +1,7 @@
 ﻿using System.IO.Compression;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
+using MA_Core.Logic.StateMachines;
 using MA_Core.Util;
 
 [assembly: InternalsVisibleTo("MA_Test")]
@@ -111,12 +112,13 @@ public sealed class DataSet : IDisposable
         return files.Where(x => x.EndsWith(DatasetFileEnding)).ToArray();
     }
 
-    public void Save()
+    public void Save(bool overwrite = false)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(Path, nameof(Path));
+        if (!overwrite && File.Exists(Path)) throw new FileExistsException();
+        
         try
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(Path, nameof(Path));
-
             var archiveFolder = TempDir.GetNewTempDir($"save_ds_{Name}");
             var resultFolder = TempDir.GetNewTempDir($"save_ds_archive_{Name}");
 

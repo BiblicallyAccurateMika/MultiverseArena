@@ -44,6 +44,12 @@ public class DataSetEditorView(View parent) : View<DataSetEditorStateMachine, Da
                         }, command => !String.IsNullOrWhiteSpace(command) && (command.StartsWith("e ") || command.StartsWith("edit "))),
                         new Interaction("s", "Save", _ => response(new IdleResponseSave()))
                     ];
+                case OverwriteRequest:
+                    return
+                    [
+                        new Interaction("0", "No", _ => response(new OverwriteResponse(false))),
+                        new Interaction("1", "Yes", _ => response(new OverwriteResponse(true)))
+                    ];
                 default: return null!;
             }
         }
@@ -69,13 +75,19 @@ public class DataSetEditorView(View parent) : View<DataSetEditorStateMachine, Da
 
                     builder.AppendLine($"{i + 1} - {Path.GetFileName(dataSet)}");
                 }
-                break;
+                return;
             case DataSetEditorStateHolder.LoadedState loaded:
                 builder.AppendLine($"Path: {loaded.DataSet.Path}");
                 builder.AppendLine($"Name: {loaded.DataSet.Name}");
                 builder.AppendLine($"Actions: {loaded.DataSet.Actions.Count}");
                 builder.AppendLine($"Units: {loaded.DataSet.Units.Count}");
-                break;
+                
+                if (StateMachine.Request is OverwriteRequest)
+                {
+                    builder.AppendLine();
+                    builder.AppendLine($"File \"{loaded.DataSet.Path}\" already exists. Overwrite?");
+                }
+                return;
         }
     }
 
