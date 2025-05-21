@@ -19,15 +19,22 @@ public sealed class DataSet : IDisposable
 
     private const string DatasetFileEnding = ".dataset";
     private const string DatasetJsonFileName = "DataSet.json";
+    private const string MetadataJsonFileName = "Metadata.json";
 
     #endregion
 
     #region public
     
+    // DataSet Properties
     public string Path { get; set; } = String.Empty;
     public string Name { get; set; } = String.Empty;
     public List<Action> Actions { get; } = [];
     public List<Unit> Units { get; } = [];
+    
+    // Metadata Properties
+    /// MM.mmm (M = Major, m = minor)<br/>
+    /// Major Versions are breaking, minor versions need minimal changes
+    public double Version { get; private set; } = Versions.DataSetVersion;
 
     #endregion
 
@@ -61,32 +68,39 @@ public sealed class DataSet : IDisposable
         if (!path.EndsWith(DatasetFileEnding)) throw new ArgumentException("Invalid file ending");
 
         using var zip = ZipFile.OpenRead(path);
-        if (!zip.Entries.Any(x => x.Name.Equals(DatasetJsonFileName)))
+        if (zip.Entries.None(x => x.Name.Equals(DatasetJsonFileName)))
             throw new FileNotFoundException($"Dataset does not contain '{DatasetJsonFileName}'", path);
+        if (zip.Entries.None(x => x.Name.Equals(MetadataJsonFileName)))
+            throw new FileNotFoundException($"Dataset does not contain '{MetadataJsonFileName}'", path);
         
         Path = path;
         UnpackedDirectory = TempDir.GetNewTempDir("dataset");
         
-        var file = zip.Entries.First(x => x.Name.Equals(DatasetJsonFileName));
-
-        var json = JsonDocument.Parse(file.Open());
-        var datasetData = json.Deserialize<DataSetJson>();
-
+        var datasetFile = zip.Entries.First(x => x.Name.Equals(DatasetJsonFileName));
+        var datasetJson = JsonDocument.Parse(datasetFile.Open());
+        var datasetData = datasetJson.Deserialize<DataSetJson>();
         if (datasetData == null) throw new JsonException("File does not contain dataset data");
         
-        applyJsonConfig(datasetData);
+        var metaFile = zip.Entries.First(x => x.Name.Equals(MetadataJsonFileName));
+        var metaJson = JsonDocument.Parse(metaFile.Open());
+        var metaData = metaJson.Deserialize<DataSetMetadataJson>();
+        if (metaData == null) throw new JsonException("File does not contain metadata");
+        
+        applyJsonConfig(datasetData, metaData);
         
         zip.ExtractToDirectory(UnpackedDirectory.FullName);
     }
     
-    internal static DataSet Test_Factory(DataSetJson datasetData)
+    internal static DataSet Test_Factory(DataSetJson datasetData, DataSetMetadataJson metadataJson)
     {
         var dataSet = new DataSet();
-        dataSet.applyJsonConfig(datasetData);
+        dataSet.applyJsonConfig(datasetData, metadataJson);
         return dataSet;
     }
-    private void applyJsonConfig(DataSetJson datasetData)
+    private void applyJsonConfig(DataSetJson datasetData, DataSetMetadataJson metadata)
     {
+        Version = metadata.Version;
+        
         Name = datasetData.Name;
         
         Actions.Clear();
@@ -122,11 +136,21 @@ public sealed class DataSet : IDisposable
             var archiveFolder = TempDir.GetNewTempDir($"save_ds_{Name}");
             var resultFolder = TempDir.GetNewTempDir($"save_ds_archive_{Name}");
 
-            // Write Json
+            #region Write Json
+
+            // DataSet
             var dsJson = new DataSetJson(this);
             var dsJsonStr = JsonSerializer.Serialize(dsJson);
             var tmpPath = System.IO.Path.Join(archiveFolder.FullName, DatasetJsonFileName);
             File.WriteAllText(tmpPath, dsJsonStr);
+            
+            // Metadata
+            var metaJson = new DataSetMetadataJson(this);
+            var metaJsonStr = JsonSerializer.Serialize(metaJson);
+            tmpPath = System.IO.Path.Join(archiveFolder.FullName, MetadataJsonFileName);
+            File.WriteAllText(tmpPath, metaJsonStr);
+
+            #endregion
             
             // Prepare Images
             
