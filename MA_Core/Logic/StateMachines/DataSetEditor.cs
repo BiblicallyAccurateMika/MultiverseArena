@@ -36,7 +36,13 @@ public record DataSetEditorStateHolder : StateHolder
 #region Requests, Responses, Exceptions
 
 public record SelectDataSetRequest : InteractionRequest;
-public record SelectDataSetResponse(string Path) : InteractionResponse;
+public record SelectDataSetResponse(string Path, bool IgnoreVersion = false) : InteractionResponse
+{
+    /// The Path of the DataSet 
+    public string Path { get; init; } = Path;
+    /// Whether the Version Number in the DataSet should be ignored
+    public bool IgnoreVersion { get; init; } = IgnoreVersion;
+}
 
 public record IdleRequest : InteractionRequest;
 public record IdleResponseUnload : InteractionResponse;

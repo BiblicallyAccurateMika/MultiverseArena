@@ -10,7 +10,7 @@ public class DataSetTests
     }
 
     [Test]
-    public void ContructorTest()
+    public void ConstructorTest()
     {
         var dataSetJson = new DataSetJson
         {
@@ -25,7 +25,8 @@ public class DataSetTests
                     [
                         new DataSetJson.ActionJson.ActionStepJson()
                         {
-                            StepType = DataSetJson.ActionJson.ActionStepJson.StepTypeEnum.Select
+                            StepType = DataSetJson.ActionJson.ActionStepJson.StepTypeEnum.Select,
+                            SelectType = DataSetJson.ActionJson.ActionStepJson.SelectTypeEnum.Self
                         }
                     ]
                 },
@@ -132,7 +133,12 @@ public class DataSetTests
             ]
         };
 
-        var dataset = DataSet.Test_Factory(dataSetJson);
+        var metadataJson = new DataSetMetadataJson
+        {
+            Version = Versions.DataSetVersion
+        };
+
+        var dataset = DataSet.Test_Factory(dataSetJson, metadataJson);
         
         Assert.Multiple(() =>
         {
