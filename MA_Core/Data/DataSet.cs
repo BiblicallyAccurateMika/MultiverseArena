@@ -76,15 +76,15 @@ public sealed class DataSet : IDisposable
         Path = path;
         UnpackedDirectory = TempDir.GetNewTempDir("dataset");
         
-        var datasetFile = zip.Entries.First(x => x.Name.Equals(DatasetJsonFileName));
-        var datasetJson = JsonDocument.Parse(datasetFile.Open());
-        var datasetData = datasetJson.Deserialize<DataSetJson>();
-        if (datasetData == null) throw new JsonException("File does not contain dataset data");
-        
         var metaFile = zip.Entries.First(x => x.Name.Equals(MetadataJsonFileName));
         var metaJson = JsonDocument.Parse(metaFile.Open());
         var metaData = metaJson.Deserialize<DataSetMetadataJson>();
         if (metaData == null) throw new JsonException("File does not contain metadata");
+        
+        var datasetFile = zip.Entries.First(x => x.Name.Equals(DatasetJsonFileName));
+        var datasetJson = JsonDocument.Parse(datasetFile.Open());
+        var datasetData = datasetJson.Deserialize<DataSetJson>();
+        if (datasetData == null) throw new JsonException("File does not contain dataset data");
         
         applyJsonConfig(datasetData, metaData);
         
@@ -99,6 +99,11 @@ public sealed class DataSet : IDisposable
     }
     private void applyJsonConfig(DataSetJson datasetData, DataSetMetadataJson metadata)
     {
+        if (Math.Abs(metadata.Version - Versions.DataSetVersion) > 0.0001)
+        {
+            throw new Exception($"DataSet Version mismatch. Expected: {Versions.DataSetVersion} - Actual: {metadata.Version}");
+        }
+        
         Version = metadata.Version;
         
         Name = datasetData.Name;
