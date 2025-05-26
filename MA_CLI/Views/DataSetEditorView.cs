@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using Ma_CLI.Logic;
 using Ma_CLI.Util;
 using MA_Core.Data;
 using MA_Core.Data.Enums;
@@ -40,7 +41,12 @@ public class DataSetEditorView(View parent) : View<DataSetEditorStateMachine, Da
                             else if (command.StartsWith("edit ")) edit = command.Substring(4);
                             
                             var editArgs = edit.Split(' ');
-                            return response(new IdleResponseEdit(editArgs[0], editArgs[1..]));
+
+                            if (!DataSetEditDecoder.Edit(data, editArgs[0], out var error, editArgs[1..]))
+                            {
+                                throw new Exception(error);
+                            }
+                            return done();
                         }, command => !String.IsNullOrWhiteSpace(command) && (command.StartsWith("e ") || command.StartsWith("edit "))),
                         new Interaction("s", "Save", _ => response(new IdleResponseSave()))
                     ];

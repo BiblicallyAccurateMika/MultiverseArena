@@ -19,11 +19,14 @@ public static class DataSetManager
             if (!execute) return result;
 
             dataSet.Path = newPath;
+            result = true;
         }
         catch (Exception ex)
         {
-            return false;
+            result = false;
         }
+        
+        return result;
     }
 
     public static bool EditName(DataSet dataSet, string newName, bool execute = false)
@@ -38,46 +41,13 @@ public static class DataSetManager
             if (!execute) return result;
 
             dataSet.Name = newName;
+            result = true;
         }
         catch (Exception ex)
         {
-            return false;
+            result = false;
         }
-    }
-
-    private static void validateEdit(DataSet dataSet, string key, string[] args)
-    {
-        ArgumentNullException.ThrowIfNull(dataSet);
-        ArgumentException.ThrowIfNullOrWhiteSpace(key);
-        ArgumentNullException.ThrowIfNull(args);
-
-        switch (key)
-        {
-            case "name":
-                if (args.Length != 1) throw new ArgumentException("Invalid argument count");
-                break;
-            case "path":
-                if (args.Length != 1) throw new ArgumentException("Invalid argument count");
-                var dir = Path.GetDirectoryName(args[0]);
-                if (!Directory.Exists(dir)) throw new DirectoryNotFoundException();
-                break;
-            default:
-                throw new ArgumentException("Unknown key");
-        }
-    }
-
-    public static void ExecuteEdit(DataSet dataSet, string key, string[] args)
-    {
-        validateEdit(dataSet, key, args);
         
-        switch (key)
-        {
-            case "name":
-                dataSet.Name = args[0];
-                break;
-            case "path":
-                dataSet.Path = args[0];
-                break;
-        }
+        return result;
     }
 }

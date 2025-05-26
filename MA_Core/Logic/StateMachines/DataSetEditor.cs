@@ -46,7 +46,6 @@ public record SelectDataSetResponse(string Path, bool IgnoreVersion = false) : I
 
 public record IdleRequest : InteractionRequest;
 public record IdleResponseUnload : InteractionResponse;
-public record IdleResponseEdit(string Key, params string[] Args) : InteractionResponse;
 public record IdleResponseSave : InteractionResponse;
 
 public class FileExistsException : Exception;
@@ -79,11 +78,6 @@ public class DataSetEditorStateMachine : StateMachine<DataSetEditorStateHolder>
             .Condition(state => state.CurrentState is DataSetEditorStateHolder.LoadedState)
             .InitialAction((_, _) => requestResult(new IdleRequest()))
             .Action<IdleResponseUnload>((state, _) => stateResult(DataSetEditorStateHolder.Unload(state.AsLoaded().DataSet)))
-            .Action<IdleResponseEdit>((state, edit) =>
-            {
-                DataSetManager.ExecuteEdit(state.AsLoaded().DataSet, edit.Key, edit.Args);
-                return stateResult(state);
-            })
             .Action<IdleResponseSave>((state, _) =>
             {
                 try
