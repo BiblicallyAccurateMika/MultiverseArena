@@ -2,31 +2,31 @@
 
 public class Unit
 {
-    public string Codename { get; set; }
-    public string IconPath { get; set; }
+    public string Codename { get; set; } = String.Empty;
+    public string IconPath { get; set; } = String.Empty;
 
-    public Level Level1 { get; set; }
-    public Level Level2 { get; set; }
-    public Level Level3 { get; set; }
-    public Level Level4 { get; set; }
+    public Level Level1 { get; init; } = new();
+    public Level Level2 { get; init; } = new();
+    public Level Level3 { get; init; } = new();
+    public Level Level4 { get; init; } = new();
     
     public class Level
     {
-        public string Name { get; set; }
-        public string SpritePath { get; set; }
+        public string Name { get; set; } = String.Empty;
+        public string SpritePath { get; set; } = String.Empty;
         
-        public int HP { get; set; }
+        public int HP { get; set; } = 100;
         
-        public int Strength { get; set; }
-        public int Toughness { get; set; }
-        public int Precision { get; set; }
-        public int Agility { get; set; }
+        public int Strength { get; set; } = 100;
+        public int Toughness { get; set; } = 100;
+        public int Precision { get; set; } = 100;
+        public int Agility { get; set; } = 100;
         
-        public int Power { get; set; }
-        public int Defense { get; set; }
-        public int Aura { get; set; }
-        public int Willpower { get; set; }
+        public int Power { get; set; } = 100;
+        public int Defense { get; set; } = 100;
+        public int Aura { get; set; } = 100;
+        public int Willpower { get; set; } = 100;
         
-        public Action[] Actions { get; set; }
+        public Action[] Actions { get; init; } = [];
     }
 }

@@ -42,7 +42,7 @@ public class DataSetEditorView(View parent) : View<DataSetEditorStateMachine, Da
                             
                             var editArgs = edit.Split(' ');
 
-                            if (!DataSetEditDecoder.Edit(data, editArgs[0], out var error, editArgs[1..]))
+                            if (!DataSetEditDecoder.Edit(data, "Main", editArgs[0], out var error, editArgs[1..]))
                             {
                                 throw new Exception(error);
                             }
@@ -234,6 +234,20 @@ public class DataSetEditorView(View parent) : View<DataSetEditorStateMachine, Da
                 var counter = Int32.Parse(counterStr) - 1;
                 return view(new UnitDetailView(this, Data, Data.Units[counter].Codename));
             }, counterStr => Int32.TryParse(counterStr, out var counter) && counter > 0 && counter <= Data.Units.Count),
+            new("e", "Edit", command =>
+            {
+                var edit = "";
+                if (command.StartsWith("e ")) edit = command.Substring(2);
+                else if (command.StartsWith("edit ")) edit = command.Substring(4);
+                            
+                var editArgs = edit.Split(' ');
+
+                if (!DataSetEditDecoder.Edit(data, "UnitList", editArgs[0], out var error, editArgs[1..]))
+                {
+                    throw new Exception(error);
+                }
+                return done();
+            }, command => !String.IsNullOrWhiteSpace(command) && (command.StartsWith("e ") || command.StartsWith("edit "))),
         ];
         
         protected override void render(StringBuilder builder)
@@ -286,7 +300,7 @@ public class DataSetEditorView(View parent) : View<DataSetEditorStateMachine, Da
                 x.Defense.ToString().Length,
                 x.Aura.ToString().Length,
                 x.Willpower.ToString().Length,
-                x.Actions.Max(y => y.ToCliShortString().Length)
+                x.Actions.Length > 0 ? x.Actions.Max(y => y.ToCliShortString().Length) : 0
             }.Max()));
 
             var divider = "+" + String.Join("+", columnWidths.Select(width => new string('-', width + 2))) + "+";
