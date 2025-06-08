@@ -36,10 +36,10 @@ public record DataSetEditorStateHolder : StateHolder
 #region Requests, Responses, Exceptions
 
 public record SelectDataSetRequest : InteractionRequest;
-public record SelectDataSetResponse(string Path, bool IgnoreVersion = false) : InteractionResponse
+public record SelectDataSetResponse(FilePath Path, bool IgnoreVersion = false) : InteractionResponse
 {
     /// The Path of the DataSet 
-    public string Path { get; init; } = Path;
+    public FilePath Path { get; init; } = Path;
     /// Whether the Version Number in the DataSet should be ignored
     public bool IgnoreVersion { get; init; } = IgnoreVersion;
 }

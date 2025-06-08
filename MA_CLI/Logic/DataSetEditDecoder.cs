@@ -70,7 +70,7 @@ public static class DataSetEditDecoder
                         if (args.Length != 1)
                             throw new Exception("Invalid argument count");
                         var path = args[0];
-                        DataSetManager.EditPath(dataSet, path, execute);
+                        dataSet.Path = FilePath.From(path);
                         break;
                     }
                     default: throw new ArgumentException("Invalid key");

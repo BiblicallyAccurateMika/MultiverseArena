@@ -26,7 +26,7 @@ public sealed class DataSet : IDisposable
     #region public
     
     // DataSet Properties
-    public string Path { get; set; } = String.Empty;
+    public FilePath Path { get; set; } = FilePath.Empty;
     public string Name { get; set; } = String.Empty;
     public List<Action> Actions { get; } = [];
     public List<Unit> Units { get; } = [];
@@ -60,18 +60,16 @@ public sealed class DataSet : IDisposable
     /// Deserializes a dataset from the given file
     /// </summary>
     /// <param name="path">Path to the dataset file</param>
-    internal DataSet(string path)
+    internal DataSet(FilePath path)
     {
-        if (String.IsNullOrEmpty(path)) throw new ArgumentNullException(nameof(path));
-        if (path.StartsWith('"') && path.EndsWith('"')) path = path[1..^1]; // Removes quotation marks
-        if (!File.Exists(path)) throw new FileNotFoundException("File not found", path);
-        if (!path.EndsWith(DatasetFileEnding)) throw new ArgumentException("Invalid file ending");
+        if (!File.Exists((string)path)) throw new FileNotFoundException("File not found", (string)path);
+        if (!((string)path).EndsWith(DatasetFileEnding)) throw new ArgumentException("Invalid file ending");
 
-        using var zip = ZipFile.OpenRead(path);
+        using var zip = ZipFile.OpenRead((string)path);
         if (zip.Entries.None(x => x.Name.Equals(DatasetJsonFileName)))
-            throw new FileNotFoundException($"Dataset does not contain '{DatasetJsonFileName}'", path);
+            throw new FileNotFoundException($"Dataset does not contain '{DatasetJsonFileName}'", (string)path);
         if (zip.Entries.None(x => x.Name.Equals(MetadataJsonFileName)))
-            throw new FileNotFoundException($"Dataset does not contain '{MetadataJsonFileName}'", path);
+            throw new FileNotFoundException($"Dataset does not contain '{MetadataJsonFileName}'", (string)path);
         
         Path = path;
         UnpackedDirectory = TempDir.GetNewTempDir("dataset");
@@ -124,17 +122,17 @@ public sealed class DataSet : IDisposable
 
     #region Methods
 
-    public static string[] GetDataSetsFromFolder(string folderPath)
+    public static FilePath[] GetDataSetsFromFolder(string folderPath)
     {
         if (!Directory.Exists(folderPath)) throw new DirectoryNotFoundException($"Directory not found: {folderPath}");
-        var files = Directory.GetFiles(folderPath);
-        return files.Where(x => x.EndsWith(DatasetFileEnding)).ToArray();
+        var files = Directory.GetFiles(folderPath).Select(FilePath.From);
+        return files.Where(x => ((string)x).EndsWith(DatasetFileEnding)).ToArray();
     }
 
     public void Save(bool overwrite = false)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(Path, nameof(Path));
-        if (!overwrite && File.Exists(Path)) throw new FileExistsException();
+        if (Path == FilePath.Empty) throw new ArgumentException("Path is empty");
+        if (!overwrite && File.Exists((string)Path)) throw new FileExistsException();
         
         try
         {
@@ -162,7 +160,7 @@ public sealed class DataSet : IDisposable
             // Bind Zip
             var archiveFileName = System.IO.Path.Join(resultFolder.FullName, "final.zip");
             ZipFile.CreateFromDirectory(archiveFolder.FullName, archiveFileName);
-            File.Move(archiveFileName, Path, true);
+            File.Move(archiveFileName, (string)Path, true);
             
             // Cleanup Temp Folder
             archiveFolder.Delete(true);

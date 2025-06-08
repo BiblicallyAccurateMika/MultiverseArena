@@ -25,7 +25,7 @@ public class DataSetEditorView(View parent) : View<DataSetEditorStateMachine, Da
                             idStr => response(new SelectDataSetResponse(DataSets[Int32.Parse(idStr) - 1])),
                             idStr => Int32.TryParse(idStr, out var id) && id > 0 && id <= DataSets.Length),
                         new Interaction("Path", "Edit Dataset (by path)",
-                            path => response(new SelectDataSetResponse(path)),
+                            path => response(new SelectDataSetResponse(FilePath.From(path))),
                             path => !String.IsNullOrWhiteSpace(path))
                     ];
                 case IdleRequest:
@@ -79,7 +79,7 @@ public class DataSetEditorView(View parent) : View<DataSetEditorStateMachine, Da
                 {
                     var dataSet = DataSets[i];
 
-                    builder.AppendLine($"{i + 1} - {Path.GetFileName(dataSet)}");
+                    builder.AppendLine($"{i + 1} - {Path.GetFileName((string)dataSet)}");
                 }
                 return;
             case DataSetEditorStateHolder.LoadedState loaded:
@@ -97,8 +97,8 @@ public class DataSetEditorView(View parent) : View<DataSetEditorStateMachine, Da
         }
     }
 
-    private string[]? _dataSets;
-    private string[] DataSets => _dataSets ??= DataSet.GetDataSetsFromFolder(Settings.Instance.DataSetFolderPath);
+    private FilePath[]? _dataSets;
+    private FilePath[] DataSets => _dataSets ??= DataSet.GetDataSetsFromFolder(Settings.Instance.DataSetFolderPath);
 
     #region Subviews
 
