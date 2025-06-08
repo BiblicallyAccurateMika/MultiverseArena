@@ -24,12 +24,18 @@ public partial struct FilePath
         
         try
         {
+            if (input.Any(x => Path.GetInvalidPathChars().Contains(x))) return Validation.Invalid("String contains invalid path characters");
+            
             var file = Path.GetFileName(input);
-            return String.IsNullOrEmpty(file) ? Validation.Invalid("Path is not a file") : Validation.Ok;
+            
+            if (String.IsNullOrEmpty(file)) return Validation.Invalid("Path is not a file");
+            if (file.Any(x => Path.GetInvalidFileNameChars().Contains(x))) return Validation.Invalid("String contains invalid filename characters");
         }
         catch (ArgumentException)
         {
             return Validation.Invalid("Invalid Path");
         }
+        
+        return Validation.Ok;
     }
 }
