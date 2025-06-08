@@ -2,6 +2,7 @@
 using MA_Core.Data;
 using MA_Core.Logic.Managers;
 using MA_Core.Util;
+using FilePath = MA_Core.Data.ValueObjects.FilePath;
 
 namespace MA_Core.Logic.StateMachines;
 

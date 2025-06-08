@@ -5,6 +5,7 @@ using MA_Core.Data;
 using MA_Core.Data.Enums;
 using MA_Core.Logic.StateMachines;
 using Action = MA_Core.Data.Action;
+using FilePath = MA_Core.Data.ValueObjects.FilePath;
 using Range = MA_Core.Data.Enums.Range;
 
 namespace Ma_CLI.Views;

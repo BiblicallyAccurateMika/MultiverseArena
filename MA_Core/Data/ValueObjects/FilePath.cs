@@ -1,6 +1,6 @@
 ﻿using Vogen;
 
-namespace MA_Core.Data;
+namespace MA_Core.Data.ValueObjects;
 
 [ValueObject<string>]
 public partial struct FilePath

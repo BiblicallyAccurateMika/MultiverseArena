@@ -1,5 +1,6 @@
 ﻿using MA_Core.Data;
 using Vogen;
+using FilePath = MA_Core.Data.ValueObjects.FilePath;
 
 namespace MA_Test.Tests.ValueObjects;
 

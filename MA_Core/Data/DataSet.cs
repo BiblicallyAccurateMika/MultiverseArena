@@ -26,7 +26,7 @@ public sealed class DataSet : IDisposable
     #region public
     
     // DataSet Properties
-    public FilePath Path { get; set; } = FilePath.Empty;
+    public ValueObjects.FilePath Path { get; set; } = ValueObjects.FilePath.Empty;
     public string Name { get; set; } = String.Empty;
     public List<Action> Actions { get; } = [];
     public List<Unit> Units { get; } = [];
@@ -60,7 +60,7 @@ public sealed class DataSet : IDisposable
     /// Deserializes a dataset from the given file
     /// </summary>
     /// <param name="path">Path to the dataset file</param>
-    internal DataSet(FilePath path)
+    internal DataSet(ValueObjects.FilePath path)
     {
         if (!File.Exists((string)path)) throw new FileNotFoundException("File not found", (string)path);
         if (!((string)path).EndsWith(DatasetFileEnding)) throw new ArgumentException("Invalid file ending");
@@ -122,16 +122,16 @@ public sealed class DataSet : IDisposable
 
     #region Methods
 
-    public static FilePath[] GetDataSetsFromFolder(string folderPath)
+    public static ValueObjects.FilePath[] GetDataSetsFromFolder(string folderPath)
     {
         if (!Directory.Exists(folderPath)) throw new DirectoryNotFoundException($"Directory not found: {folderPath}");
-        var files = Directory.GetFiles(folderPath).Select(FilePath.From);
+        var files = Directory.GetFiles(folderPath).Select(ValueObjects.FilePath.From);
         return files.Where(x => ((string)x).EndsWith(DatasetFileEnding)).ToArray();
     }
 
     public void Save(bool overwrite = false)
     {
-        if (Path == FilePath.Empty) throw new ArgumentException("Path is empty");
+        if (Path == ValueObjects.FilePath.Empty) throw new ArgumentException("Path is empty");
         if (!overwrite && File.Exists((string)Path)) throw new FileExistsException();
         
         try

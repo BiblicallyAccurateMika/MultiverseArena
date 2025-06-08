@@ -1,5 +1,6 @@
 ﻿using MA_Core.Data;
 using MA_Core.Logic.Managers;
+using FilePath = MA_Core.Data.ValueObjects.FilePath;
 
 namespace Ma_CLI.Logic;
 
