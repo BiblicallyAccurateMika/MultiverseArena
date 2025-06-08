@@ -1,6 +1,7 @@
 ﻿using System.IO.Compression;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
+using MA_Core.Data.ValueObjects;
 using MA_Core.Logic.StateMachines;
 using MA_Core.Util;
 
@@ -16,8 +17,7 @@ public sealed class DataSet : IDisposable
     #region Properties
 
     #region constants
-
-    private const string DatasetFileEnding = ".dataset";
+    
     private const string DatasetJsonFileName = "DataSet.json";
     private const string MetadataJsonFileName = "Metadata.json";
 
@@ -26,8 +26,8 @@ public sealed class DataSet : IDisposable
     #region public
     
     // DataSet Properties
-    public ValueObjects.FilePath Path { get; set; } = ValueObjects.FilePath.Empty;
-    public string Name { get; set; } = String.Empty;
+    public DataSetFilePath Path { get; set; } = DataSetFilePath.Empty;
+    public DataSetName Name { get; set; } = DataSetName.Empty;
     public List<Action> Actions { get; } = [];
     public List<Unit> Units { get; } = [];
     
@@ -60,16 +60,15 @@ public sealed class DataSet : IDisposable
     /// Deserializes a dataset from the given file
     /// </summary>
     /// <param name="path">Path to the dataset file</param>
-    internal DataSet(ValueObjects.FilePath path)
+    internal DataSet(DataSetFilePath path)
     {
-        if (!File.Exists((string)path)) throw new FileNotFoundException("File not found", (string)path);
-        if (!((string)path).EndsWith(DatasetFileEnding)) throw new ArgumentException("Invalid file ending");
+        if (!File.Exists(path.ToString())) throw new FileNotFoundException("File not found", path.ToString());
 
-        using var zip = ZipFile.OpenRead((string)path);
+        using var zip = ZipFile.OpenRead(path.ToString());
         if (zip.Entries.None(x => x.Name.Equals(DatasetJsonFileName)))
-            throw new FileNotFoundException($"Dataset does not contain '{DatasetJsonFileName}'", (string)path);
+            throw new FileNotFoundException($"Dataset does not contain '{DatasetJsonFileName}'", path.ToString());
         if (zip.Entries.None(x => x.Name.Equals(MetadataJsonFileName)))
-            throw new FileNotFoundException($"Dataset does not contain '{MetadataJsonFileName}'", (string)path);
+            throw new FileNotFoundException($"Dataset does not contain '{MetadataJsonFileName}'", path.ToString());
         
         Path = path;
         UnpackedDirectory = TempDir.GetNewTempDir("dataset");
@@ -122,17 +121,28 @@ public sealed class DataSet : IDisposable
 
     #region Methods
 
-    public static ValueObjects.FilePath[] GetDataSetsFromFolder(string folderPath)
+    public static DataSetFilePath[] GetDataSetsFromFolder(string folderPath)
     {
         if (!Directory.Exists(folderPath)) throw new DirectoryNotFoundException($"Directory not found: {folderPath}");
-        var files = Directory.GetFiles(folderPath).Select(ValueObjects.FilePath.From);
-        return files.Where(x => ((string)x).EndsWith(DatasetFileEnding)).ToArray();
+        
+        var files = Directory.GetFiles(folderPath).Select(FilePath.From);
+        
+        List<DataSetFilePath> dataSetFilePaths = [];
+        foreach (var file in files)
+        {
+            if (DataSetFilePath.TryFrom(file, out var ds))
+            {
+                dataSetFilePaths.Add(ds);
+            }
+        }
+
+        return dataSetFilePaths.ToArray();
     }
 
     public void Save(bool overwrite = false)
     {
-        if (Path == ValueObjects.FilePath.Empty) throw new ArgumentException("Path is empty");
-        if (!overwrite && File.Exists((string)Path)) throw new FileExistsException();
+        if (Path == DataSetFilePath.Empty) throw new ArgumentException("Path is empty");
+        if (!overwrite && File.Exists(Path.ToString())) throw new FileExistsException();
         
         try
         {
@@ -160,7 +170,7 @@ public sealed class DataSet : IDisposable
             // Bind Zip
             var archiveFileName = System.IO.Path.Join(resultFolder.FullName, "final.zip");
             ZipFile.CreateFromDirectory(archiveFolder.FullName, archiveFileName);
-            File.Move(archiveFileName, (string)Path, true);
+            File.Move(archiveFileName, Path.ToString(), true);
             
             // Cleanup Temp Folder
             archiveFolder.Delete(true);

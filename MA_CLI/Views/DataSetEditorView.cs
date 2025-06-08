@@ -3,9 +3,9 @@ using Ma_CLI.Logic;
 using Ma_CLI.Util;
 using MA_Core.Data;
 using MA_Core.Data.Enums;
+using MA_Core.Data.ValueObjects;
 using MA_Core.Logic.StateMachines;
 using Action = MA_Core.Data.Action;
-using FilePath = MA_Core.Data.ValueObjects.FilePath;
 using Range = MA_Core.Data.Enums.Range;
 
 namespace Ma_CLI.Views;
@@ -26,7 +26,7 @@ public class DataSetEditorView(View parent) : View<DataSetEditorStateMachine, Da
                             idStr => response(new SelectDataSetResponse(DataSets[Int32.Parse(idStr) - 1])),
                             idStr => Int32.TryParse(idStr, out var id) && id > 0 && id <= DataSets.Length),
                         new Interaction("Path", "Edit Dataset (by path)",
-                            path => response(new SelectDataSetResponse(FilePath.From(path))),
+                            path => response(new SelectDataSetResponse(DataSetFilePath.From(path))),
                             path => !String.IsNullOrWhiteSpace(path))
                     ];
                 case IdleRequest:
@@ -43,7 +43,7 @@ public class DataSetEditorView(View parent) : View<DataSetEditorStateMachine, Da
                             
                             var editArgs = edit.Split(' ');
 
-                            if (!DataSetEditDecoder.Edit(data, "Main", editArgs[0], out var error, editArgs[1..]))
+                            if (!DataSetEditDecoder.Edit(data, this, editArgs[0], out var error, editArgs[1..]))
                             {
                                 throw new Exception(error);
                             }
@@ -80,7 +80,7 @@ public class DataSetEditorView(View parent) : View<DataSetEditorStateMachine, Da
                 {
                     var dataSet = DataSets[i];
 
-                    builder.AppendLine($"{i + 1} - {Path.GetFileName((string)dataSet)}");
+                    builder.AppendLine($"{i + 1} - {Path.GetFileName(dataSet.ToString())}");
                 }
                 return;
             case DataSetEditorStateHolder.LoadedState loaded:
@@ -98,17 +98,17 @@ public class DataSetEditorView(View parent) : View<DataSetEditorStateMachine, Da
         }
     }
 
-    private FilePath[]? _dataSets;
-    private FilePath[] DataSets => _dataSets ??= DataSet.GetDataSetsFromFolder(Settings.Instance.DataSetFolderPath);
+    private DataSetFilePath[]? _dataSets;
+    private DataSetFilePath[] DataSets => _dataSets ??= DataSet.GetDataSetsFromFolder(Settings.Instance.DataSetFolderPath);
 
     #region Subviews
 
-    private abstract class DatasetView(View parent, DataSet data) : View(parent)
+    public abstract class DatasetView(View parent, DataSet data) : View(parent)
     {
         protected DataSet Data { get; } = data;
     }
 
-    private class ActionsView(View parent, DataSet data) : DatasetView(parent, data)
+    public class ActionsView(View parent, DataSet data) : DatasetView(parent, data)
     {
         protected override string ViewName => "ACTIONS";
         
@@ -124,7 +124,7 @@ public class DataSetEditorView(View parent) : View<DataSetEditorStateMachine, Da
         }
     }
 
-    private class ActionDetailView : DatasetView
+    public class ActionDetailView : DatasetView
     {
         protected override string ViewName => _action.ToCliShortString();
         private readonly Action _action;
@@ -222,13 +222,13 @@ public class DataSetEditorView(View parent) : View<DataSetEditorStateMachine, Da
         }
     }
 
-    private class UnitsView(View parent, DataSet data) : DatasetView(parent, data)
+    public class UnitsView(View parent, DataSet data) : DatasetView(parent, data)
     {
         protected override string ViewName => "UNITS";
 
         protected override Interaction[] Interactions =>
         [
-            new("CodeName", "Unit Details", codename => view(new UnitDetailView(this, Data, codename)), 
+            new("CodeName", "Unit Details", codename => view(new UnitDetailView(this, Data, UnitCodeName.From(codename))), 
                 codename => Data.Units.Any(x => x.Codename == codename)),
             new("Counter", "Unit Details (by counter)", counterStr =>
             {
@@ -243,7 +243,7 @@ public class DataSetEditorView(View parent) : View<DataSetEditorStateMachine, Da
                             
                 var editArgs = edit.Split(' ');
 
-                if (!DataSetEditDecoder.Edit(data, "UnitList", editArgs[0], out var error, editArgs[1..]))
+                if (!DataSetEditDecoder.Edit(data, this, editArgs[0], out var error, editArgs[1..]))
                 {
                     throw new Exception(error);
                 }
@@ -261,16 +261,16 @@ public class DataSetEditorView(View parent) : View<DataSetEditorStateMachine, Da
         }
     }
     
-    private class UnitDetailView : DatasetView
+    public class UnitDetailView : DatasetView
     {
-        protected override string ViewName => _unit.Codename;
+        protected override string ViewName => _unit.Codename.ToString();
         
         protected override Interaction[] Interactions => 
             [new("Action ID", "Action Details", id => view(new ActionDetailView(this, Data, id)), id => Data.Actions.Any(x => x.ID == id))];
         
         private readonly Unit _unit;
         
-        public UnitDetailView(View parent, DataSet data, string codename) : base(parent, data)
+        public UnitDetailView(View parent, DataSet data, UnitCodeName codename) : base(parent, data)
         {
             _unit = Data.Units.First(x => x.Codename == codename);
         }

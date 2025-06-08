@@ -1,19 +1,50 @@
-﻿using MA_Core.Data;
-using MA_Core.Logic.Managers;
-using FilePath = MA_Core.Data.ValueObjects.FilePath;
+﻿using Ma_CLI.Views;
+using MA_Core.Data;
+using MA_Core.Data.ValueObjects;
+using MA_Core.Util;
 
 namespace Ma_CLI.Logic;
 
 public static class DataSetEditDecoder
 {
-    public static bool ValidateEdit(DataSet dataSet, string view, string key, out string error, params string[] args)
+    public enum EditKey
+    {
+        Path,
+        Name,
+        UnitAdd,
+        UnitRemove
+    }
+
+    public static EditKey GetEditKeyFromCommand(View view, string command)
+    {
+        switch (command)
+        {
+            case "path":
+                if (view is DataSetEditorView) return EditKey.Path;
+                break;
+            case "name":
+                if (view is DataSetEditorView) return EditKey.Name;
+                break;
+            case "add":
+                if (view is DataSetEditorView.UnitsView) return EditKey.UnitAdd;
+                break;
+            case "remove":
+                if (view is DataSetEditorView.UnitsView) return EditKey.UnitRemove;
+                break;
+        }
+        
+        throw new Exception("Invalid command");
+    }
+    
+    public static bool ValidateEdit(DataSet dataSet, View view, string command, out string error, params string[] args)
     {
         var valid = false;
         error = String.Empty;
 
         try
         {
-            decodeEditCommand(dataSet, view, key, validate:true, args);
+            var key = GetEditKeyFromCommand(view, command);
+            decodeEditCommand(dataSet, key, execute:false, args);
             valid = true;
         }
         catch (Exception e)
@@ -25,14 +56,15 @@ public static class DataSetEditDecoder
         return valid;
     }
 
-    public static bool Edit(DataSet dataSet, string view, string key, out string error, params string[] args)
+    public static bool Edit(DataSet dataSet, View view, string command, out string error, params string[] args)
     {
         var valid = false;
         error = String.Empty;
 
         try
         {
-            decodeEditCommand(dataSet, view, key, validate:false, args);
+            var key = GetEditKeyFromCommand(view, command);
+            decodeEditCommand(dataSet, key, execute:true, args);
             valid = true;
         }
         catch (Exception e)
@@ -44,67 +76,34 @@ public static class DataSetEditDecoder
         return valid;
     }
 
-    private static void decodeEditCommand(DataSet dataSet, string view, string key, bool validate, params string[] args)
+    private static void decodeEditCommand(DataSet dataSet, EditKey key, bool execute, params string[] args)
     {
-        ArgumentNullException.ThrowIfNull(dataSet);
-        ArgumentException.ThrowIfNullOrWhiteSpace(key);
         ArgumentNullException.ThrowIfNull(args);
 
-        var execute = !validate;
-
-        switch (view)
+        switch (key)
         {
-            case "Main":
-            {
-                switch (key)
-                {
-                    case "name":
-                    {
-                        if (args.Length != 1)
-                            throw new Exception("Invalid argument count");
-                        var name = args[0];
-                        DataSetManager.EditName(dataSet, name, execute);
-                        break;
-                    }
-                    case "path":
-                    {
-                        if (args.Length != 1)
-                            throw new Exception("Invalid argument count");
-                        var path = args[0];
-                        dataSet.Path = FilePath.From(path);
-                        break;
-                    }
-                    default: throw new ArgumentException("Invalid key");
-                }
-
+            case EditKey.Path:
+                if (args.Length != 1) throw new Exception("Invalid argument count");
+                var path = DataSetFilePath.From(args[0]);
+                if (execute) dataSet.Path = path;
                 break;
-            }
-            case "UnitList":
-            {
-                switch (key)
-                {
-                    case "add":
-                    {
-                        if (args.Length != 1)
-                            throw new Exception("Invalid argument count");
-                        var codename = args[0];
-                        DataSetManager.AddUnit(dataSet, codename, execute);
-                        break;
-                    }
-                    case "remove":
-                    {
-                        if (args.Length != 1)
-                            throw new Exception("Invalid argument count");
-                        var codename = args[0];
-                        DataSetManager.RemoveUnit(dataSet, codename, execute);
-                        break;
-                    }
-                    default: throw new ArgumentException("Invalid key");
-                }
-
+            case EditKey.Name:
+                if (args.Length != 1) throw new Exception("Invalid argument count");
+                var name = DataSetName.From(args[0]);
+                if (execute) dataSet.Name = name;
                 break;
-            }
-            default: throw new ArgumentException($"{view} is not a valid view name");
+            case EditKey.UnitAdd:
+                if (args.Length != 1) throw new Exception("Invalid argument count");
+                if (dataSet.Units.Any(unit => unit.Codename == args[0])) throw new Exception("Codename already exists");
+                if (execute) dataSet.Units.Add(new Unit(UnitCodeName.From(args[0])));
+                break;
+            case EditKey.UnitRemove:
+                if (args.Length != 1) throw new Exception("Invalid argument count");
+                if (dataSet.Units.None(unit => unit.Codename == args[0])) throw new Exception("Codename does not exists");
+                if (execute) dataSet.Units.Remove(dataSet.Units.First(unit => unit.Codename == args[0]));
+                break;
+            default:
+                throw new NotImplementedException();
         }
     }
 }

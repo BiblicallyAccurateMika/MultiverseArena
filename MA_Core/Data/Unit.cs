@@ -1,8 +1,15 @@
-﻿namespace MA_Core.Data;
+﻿using MA_Core.Data.ValueObjects;
+
+namespace MA_Core.Data;
 
 public class Unit
 {
-    public string Codename { get; set; } = String.Empty;
+    public Unit(UnitCodeName codename)
+    {
+        Codename = codename;
+    }
+    
+    public UnitCodeName Codename { get; }
     public string IconPath { get; set; } = String.Empty;
 
     public Level Level1 { get; init; } = new();

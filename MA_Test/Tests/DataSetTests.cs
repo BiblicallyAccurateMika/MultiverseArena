@@ -1,4 +1,5 @@
 ﻿using MA_Core.Data;
+using MA_Core.Data.ValueObjects;
 
 namespace MA_Test.Tests;
 
@@ -55,7 +56,7 @@ public class DataSetTests
             [
                 new DataSetJson.UnitJson()
                 {
-                    Codename = "Test",
+                    Codename = UnitCodeName.From("Test"),
                     Icon = "TestIcon",
                     Level1 = new DataSetJson.UnitJson.UnitLevelJson()
                     {

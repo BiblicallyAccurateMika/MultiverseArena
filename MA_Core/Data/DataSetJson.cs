@@ -1,4 +1,5 @@
 ﻿using MA_Core.Data.Enums;
+using MA_Core.Data.ValueObjects;
 
 namespace MA_Core.Data;
 
@@ -7,7 +8,7 @@ namespace MA_Core.Data;
 /// </summary>
 public class DataSetJson
 {
-    public string Name { get; set; }
+    public DataSetName Name { get; set; }
     
     public ActionJson[] Actions { get; init; }
     public UnitJson[] Units { get; init; }
@@ -172,7 +173,7 @@ public class DataSetJson
     /// </summary>
     public class UnitJson
     {
-        public string Codename { get; set; }
+        public UnitCodeName Codename { get; set; }
         public string Icon { get; set; }
         public UnitLevelJson Level1 { get; set; }
         public UnitLevelJson Level2 { get; set; }
@@ -192,9 +193,8 @@ public class DataSetJson
 
         public Unit AsUnit(ICollection<Action> actions)
         {
-            return new Unit()
+            return new Unit(Codename)
             {
-                Codename = Codename,
                 IconPath = Icon,
                 Level1 = Level1.AsLevel(actions),
                 Level2 = Level2.AsLevel(actions),

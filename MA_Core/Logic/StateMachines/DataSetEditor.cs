@@ -1,8 +1,6 @@
 ﻿using MA_Core.Abstract;
 using MA_Core.Data;
-using MA_Core.Logic.Managers;
-using MA_Core.Util;
-using FilePath = MA_Core.Data.ValueObjects.FilePath;
+using MA_Core.Data.ValueObjects;
 
 namespace MA_Core.Logic.StateMachines;
 
@@ -37,10 +35,10 @@ public record DataSetEditorStateHolder : StateHolder
 #region Requests, Responses, Exceptions
 
 public record SelectDataSetRequest : InteractionRequest;
-public record SelectDataSetResponse(FilePath Path, bool IgnoreVersion = false) : InteractionResponse
+public record SelectDataSetResponse(DataSetFilePath Path, bool IgnoreVersion = false) : InteractionResponse
 {
     /// The Path of the DataSet 
-    public FilePath Path { get; init; } = Path;
+    public DataSetFilePath Path { get; init; } = Path;
     /// Whether the Version Number in the DataSet should be ignored
     public bool IgnoreVersion { get; init; } = IgnoreVersion;
 }
